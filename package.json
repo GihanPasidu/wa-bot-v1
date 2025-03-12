@@ -1,0 +1,20 @@
+{
+  "name": "cloudnextra-whatsapp-bot",
+  "version": "1.0.0",
+  "description": "A powerful WhatsApp bot with multiple features",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.4.0",
+    "qrcode-terminal": "^0.12.0",
+    "sharp": "^0.32.5",
+    "pino": "^8.15.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
