@@ -22,19 +22,27 @@ class WhatsAppBot {
 
             this.sock = makeWASocket({
                 auth: state,
-                printQRInTerminal: true,
+                printQRInTerminal: !process.env.CI, // Don't print QR in terminal for CI
                 logger,
                 markOnlineOnConnect: false,
                 connectTimeoutMs: 60000,
                 retryRequestDelayMs: 1000
             });
 
-            // Initialize message handler after socket creation
-            this.messageHandler = new MessageHandler(this.sock);
-            console.log('[BOT] Message handler initialized');
-
-            this.sock.ev.on('connection.update', (update) => {
-                const { connection, lastDisconnect } = update;
+            // Handle QR code generation
+            this.sock.ev.on('connection.update', async (update) => {
+                const { connection, lastDisconnect, qr } = update;
+                
+                if (qr) {
+                    // Print QR details for CI environment
+                    if (process.env.CI) {
+                        console.log('\n=== WhatsApp QR Code ===');
+                        console.log('Scan this QR code in your WhatsApp app:');
+                        qrcode.generate(qr, { small: true });
+                        console.log('\nQR Code URL:', `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr)}`);
+                        console.log('======================\n');
+                    }
+                }
                 
                 if (connection === 'close') {
                     console.log('[BOT] Connection closed, reconnecting...');

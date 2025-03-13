@@ -1,29 +1,19 @@
 # CloudNextra WhatsApp Bot
 
-![Deploy Status](https://github.com/GihanPasidu/whatsapp/actions/workflows/node.js.yml/badge.svg)
+## Connecting Your WhatsApp
 
-## Deployment
+When the bot is deployed, follow these steps to connect:
 
-The bot is automatically deployed to Render when changes are pushed to the main branch.
+1. Go to the GitHub Actions tab in your repository
+2. Click on the latest workflow run
+3. Expand the "Start bot and display QR" step
+4. Scan the QR code using WhatsApp on your phone:
+   - Open WhatsApp
+   - Go to Settings > Linked Devices
+   - Tap "Link a Device"
+   - Scan the QR code shown in the GitHub Actions logs
 
-### Environment Variables
+The bot will automatically connect once you scan the QR code.
 
-Required environment variables:
-- `RENDER_API_KEY`: Your Render API key
-- `AUTO_READ_STATUS`: Set to "true" to auto-read status
-- `ANTI_CALL`: Set to "true" to reject calls
-- `WELCOME_MESSAGE`: Custom welcome message
-- `GOODBYE_MESSAGE`: Custom goodbye message
-
-### Development
-
-1. Install dependencies:
-```bash
-npm install
-```
-
-2. Start development server:
-```bash
-npm run dev
-```
+Note: You need to scan the QR code within 30 seconds of the workflow starting.
 

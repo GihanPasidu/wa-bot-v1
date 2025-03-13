@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "start": "node index.js",
-    "build": "echo 'Build completed'",
-    "dev": "nodemon index.js"
+    "build": "npm install --platform=linux --arch=x64 sharp",
+    "test": "echo \"No tests specified\" && exit 0"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "^6.4.0",
