@@ -22,12 +22,16 @@ class WhatsAppBot {
 
             this.sock = makeWASocket({
                 auth: state,
-                printQRInTerminal: !process.env.CI, // Don't print QR in terminal for CI
+                printQRInTerminal: !process.env.CI,
                 logger,
                 markOnlineOnConnect: false,
                 connectTimeoutMs: 60000,
                 retryRequestDelayMs: 1000
             });
+
+            // Initialize message handler right after socket creation
+            this.messageHandler = new MessageHandler(this.sock);
+            console.log('[BOT] Message handler initialized');
 
             // Handle QR code generation
             this.sock.ev.on('connection.update', async (update) => {
@@ -38,8 +42,12 @@ class WhatsAppBot {
                     if (process.env.CI) {
                         console.log('\n=== WhatsApp QR Code ===');
                         console.log('Scan this QR code in your WhatsApp app:');
-                        qrcode.generate(qr, { small: true });
-                        console.log('\nQR Code URL:', `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr)}`);
+                        qrcode.generate(qr, {
+                            small: true,
+                            scale: 4,
+                            margin: 2
+                        });
+                        console.log('\nQR Code URL:', `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qr)}`);
                         console.log('======================\n');
                     }
                 }
@@ -61,6 +69,8 @@ class WhatsAppBot {
                     }
                 } else if (connection === 'open') {
                     console.log('[BOT] Connected successfully!');
+                    // Reinitialize message handler after reconnection
+                    this.messageHandler = new MessageHandler(this.sock);
                 }
             });
 
