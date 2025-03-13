@@ -16,9 +16,9 @@ class ControlPanel {
             response.push('╭━━━ *CLOUDNEXTRA BOT* ━━━┄⃟ ');
             response.push('│');
             response.push('│ *System Status:*');
-            response.push(`│ ⚡ Auto Read  : ${this.config.autoRead ? '✅' : '❌'}`);
-            response.push(`│ 🛡️ Anti Link  : ${this.config.antiLink ? '✅' : '❌'}`);
-            response.push(`│ 📵 Anti Call  : ${this.config.antiCall ? '✅' : '❌'}`);
+            response.push(`│ ⚡ Auto Read Status: ${this.config.autoRead ? '✅' : '❌'}`);
+            response.push(`│ 🛡️ Anti Link: ${this.config.antiLink ? '✅' : '❌'}`);
+            response.push(`│ 📵 Anti Call: ${this.config.antiCall ? '✅' : '❌'}`);
             response.push('│');
             response.push('│ *Command List:*');
             response.push('│ ▢ .panel - Display this menu');

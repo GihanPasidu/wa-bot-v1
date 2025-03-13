@@ -16,32 +16,18 @@ class MessageHandler {
         const messageContent = msg.message.conversation || 
                              msg.message.extendedTextMessage?.text || '';
 
-        // Check if this is a control command (either from yourself in any chat or in self chat)
-        const isSelfChat = sender === 'status@broadcast';
-        const isFromMe = msg.key.fromMe;
-        
-        if (isFromMe || isSelfChat) {
-            // Handle control commands
-            if (this.controlPanel.isControlCommand(messageContent)) {
-                await this.controlPanel.handleControlCommand(messageContent, sender);
-                return;
-            }
-
-            // Handle clear/restart commands
-            if (messageContent === '.clear') {
-                const { clearAuthState } = require('../auth/authState');
-                await clearAuthState();
-                await this.sock.sendMessage(sender, { text: 'All sessions cleared! Bot will restart...' });
-                process.exit(0);
-                return;
-            }
-        }
-
+        const isStatus = sender === 'status@broadcast';
         const config = this.controlPanel.getConfig();
 
-        // Auto read message if enabled
-        if (config.autoRead) {
+        // Only auto read if it's a status message
+        if (config.autoRead && isStatus) {
             await this.sock.readMessages([msg.key]);
+        }
+
+        // Check if this is a control command from yourself
+        if (msg.key.fromMe && this.controlPanel.isControlCommand(messageContent)) {
+            await this.controlPanel.handleControlCommand(messageContent, sender);
+            return;
         }
 
         // Anti-link protection if enabled
