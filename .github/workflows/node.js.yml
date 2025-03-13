@@ -7,10 +7,11 @@ on:
 
 jobs:
   deploy:
+    runs-on: ubuntu-latest
     steps:
       - name: Deploy to Render
         env:
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_API_KEY: rnd_FxX8yynJA7wTn1EUyslguOy9ala1
           RENDER_SERVICE_ID: srv-cv9iqr3tq21c73bknr2g
         run: |
           curl -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
