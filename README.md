@@ -1,6 +1,5 @@
 # CloudNextra WhatsApp Bot
 
-A powerful WhatsApp bot with multiple features.
 
 ## Features
 - 🤖 Auto status reader
