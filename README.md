@@ -1,6 +1,6 @@
 # CloudNextra WhatsApp Bot
 
-A WhatsApp bot with auto-read status and anti-call features.
+A powerful WhatsApp bot with multiple features.
 
 ## Features
 
