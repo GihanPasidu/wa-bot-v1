@@ -3,63 +3,50 @@
 A powerful WhatsApp bot with multiple features.
 
 ## Features
+- 🤖 Auto status reader
+- 🚫 Anti-call protection
+- 🖼️ Sticker creation
+- ⚙️ Control panel
 
-- Auto-read status
-- Anti-call protection
-- Sticker creation
-- Control panel menu
+## Deployment on Render
 
-## Deployment
+1. Fork this repository
+2. Create a Render account at https://render.com
+3. Create a new Web Service in Render:
+   - Connect your GitHub repository
+   - Choose "Web Service"
+   - Set Environment: Node
+   - Set Build Command: `npm install`
+   - Set Start Command: `npm start`
+   - Choose Instance Type: Free
 
-### Prerequisites
+### Environment Variables
 
-- Node.js 16 or higher
-- PM2 (for production)
-- SSH access to deployment server
+Add these to your Render dashboard:
+```env
+AUTO_READ_STATUS=true
+ANTI_CALL=true
+WELCOME_MESSAGE=Welcome to the group! 👋
+GOODBYE_MESSAGE=Goodbye! 👋
+```
 
-### GitHub Secrets Required
+### GitHub Actions Setup
 
-Set these secrets in your GitHub repository:
+1. Go to your GitHub repository settings
+2. Add these secrets:
+   - `RENDER_API_KEY`: Your Render API key
+   - `RENDER_SERVICE_ID`: Your Render service ID
 
-- `DEPLOY_KEY`: SSH private key for deployment
-- `DEPLOY_HOST`: Hostname of deployment server
-- `DEPLOY_USER`: SSH username
-- `DEPLOY_PATH`: Path to deploy application
-- `AUTO_READ_STATUS`: true/false
-- `ANTI_CALL`: true/false
-- `WELCOME_MESSAGE`: Welcome message text
-- `GOODBYE_MESSAGE`: Goodbye message text
-
-### Local Development
+## Development
 
 1. Clone the repository
-```bash
-git clone https://github.com/yourusername/whatsapp-bot.git
-cd whatsapp-bot
-```
-
-2. Install dependencies
-```bash
-npm install
-```
-
-3. Create .env file
-```bash
-cp .env.example .env
-```
-
-4. Run in development mode
-```bash
-npm run dev
-```
-
-### Production Deployment
-
-1. Push to main branch
-2. GitHub Actions will automatically deploy
-3. Monitor deployment in Actions tab
-
-## License
-
-ISC
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Create a `.env` file with required variables
+4. Start the bot:
+   ```bash
+   npm run dev
+   ```
 

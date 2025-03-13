@@ -1,17 +1,15 @@
 {
   "name": "cloudnextra-whatsapp-bot",
   "version": "1.0.0",
-  "description": "A powerful WhatsApp bot with multiple features",
-  "description": "WhatsApp Bot with auto-read status and anti-call features",
+  "description": "WhatsApp automation bot",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js",
-    "test": "echo \"No tests specified\" && exit 0",
-    "lint": "eslint ."
+    "dev": "nodemon index.js"
   },
-  "author": "CloudNextra",
-  "license": "ISC",
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "@whiskeysockets/baileys": "^6.4.0",
     "dotenv": "^16.3.1",
@@ -21,8 +19,5 @@
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
-  },
-  "engines": {
-    "node": ">=16.0.0"
   }
 }

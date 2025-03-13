@@ -3,7 +3,7 @@ name: Deploy WhatsApp Bot
 on:
   push:
     branches:
-      - main  # Runs when code is pushed to the main branch
+      - main
 
 jobs:
   deploy:
@@ -16,11 +16,17 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18  # Set your Node.js version
+          node-version: 18
           cache: 'npm'
 
       - name: Install Dependencies
         run: npm install
 
-      - name: Start Bot
-        run: npm start
+      - name: Deploy to Render
+        env:
+          RENDER_API_KEY: rnd_sw8AfrJ3bFGs44cgO35GRwuT1Pjf
+          RENDER_SERVICE_ID: srv-cv9iqr3tq21c73bknr2g
+        run: |
+          curl -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
+          -H "Authorization: Bearer $RENDER_API_KEY" \
+          -H "Content-Type: application/json"
