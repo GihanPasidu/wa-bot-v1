@@ -7,26 +7,16 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-          cache: 'npm'
-
-      - name: Install Dependencies
-        run: npm install
-
       - name: Deploy to Render
         env:
-          RENDER_API_KEY: rnd_sw8AfrJ3bFGs44cgO35GRwuT1Pjf
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           RENDER_SERVICE_ID: srv-cv9iqr3tq21c73bknr2g
         run: |
           curl -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
-          -H "Authorization: Bearer $RENDER_API_KEY" \
-          -H "Content-Type: application/json"
+          -H "accept: application/json" \
+          -H "authorization: Bearer $RENDER_API_KEY" \
+          -H "content-type: application/json" \
+          -d '{
+            "clearCache": "clear"
+          }'

@@ -1,14 +1,9 @@
 {
   "name": "cloudnextra-whatsapp-bot",
   "version": "1.0.0",
-  "description": "WhatsApp automation bot",
-  "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
-  },
-  "engines": {
-    "node": ">=18"
+    "build": "npm install --ignore-scripts=false --foreground-scripts --verbose sharp"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "^6.4.0",
@@ -19,5 +14,8 @@
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
