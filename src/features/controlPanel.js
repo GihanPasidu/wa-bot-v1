@@ -1,5 +1,3 @@
-require('dotenv').config();
-
 class ControlPanel {
     constructor(sock) {
         this.sock = sock;
@@ -14,40 +12,55 @@ class ControlPanel {
         const command = msg.toLowerCase();
         const response = [];
 
-        if (command === '!panel') {
-            response.push('🛠️ *Control Panel*');
-            response.push('──────────────');
-            response.push(`🔄 view status: ${this.config.autoRead ? '✅' : '❌'}`);
-            response.push(`🔗 Anti Link: ${this.config.antiLink ? '✅' : '❌'}`);
-            response.push(`📞 Anti Call: ${this.config.antiCall ? '✅' : '❌'}`);
-            response.push('──────────────');
-            response.push('Commands:');
-            response.push('!autoread on/off');
-            response.push('!antilink on/off');
-            response.push('!anticall on/off');
-        } else if (command.startsWith('!autoread ')) {
-            const value = command.split(' ')[1];
-            this.config.autoRead = value === 'on';
-            response.push(`Auto Read has been turned ${value.toUpperCase()}`);
-        } else if (command.startsWith('!antilink ')) {
-            const value = command.split(' ')[1];
-            this.config.antiLink = value === 'on';
-            response.push(`Anti Link has been turned ${value.toUpperCase()}`);
-        } else if (command.startsWith('!anticall ')) {
-            const value = command.split(' ')[1];
-            this.config.antiCall = value === 'on';
-            response.push(`Anti Call has been turned ${value.toUpperCase()}`);
+        if (command === '.panel') {
+            response.push('╭━━━ *CLOUDNEXTRA BOT* ━━━┄⃟ ');
+            response.push('│');
+            response.push('│ *System Status:*');
+            response.push(`│ ⚡ Auto Read  : ${this.config.autoRead ? '✅' : '❌'}`);
+            response.push(`│ 🛡️ Anti Link  : ${this.config.antiLink ? '✅' : '❌'}`);
+            response.push(`│ 📵 Anti Call  : ${this.config.antiCall ? '✅' : '❌'}`);
+            response.push('│');
+            response.push('│ *Command List:*');
+            response.push('│ ▢ .panel - Display this menu');
+            response.push('│ ▢ .autoread - Toggle auto read');
+            response.push('│ ▢ .antilink - Toggle anti link');
+            response.push('│ ▢ .anticall - Toggle anti call');
+            response.push('│ ▢ .clear - Clear all sessions');
+            response.push('│');
+            response.push('│ *CloudNextra Bot v1.0*');
+            response.push('╰━━━━━━━━━━━━━━━┄⃟ ');
+        } else if (command === '.autoread') {
+            this.config.autoRead = !this.config.autoRead;
+            response.push('┌──『 Auto Read Status 』');
+            response.push(`└─❒ ${this.config.autoRead ? '✅ Enabled' : '❌ Disabled'}`);
+        } else if (command === '.antilink') {
+            this.config.antiLink = !this.config.antiLink;
+            response.push('┌──『 Anti Link Protection 』');
+            response.push(`└─❒ ${this.config.antiLink ? '✅ Enabled' : '❌ Disabled'}`);
+        } else if (command === '.anticall') {
+            this.config.antiCall = !this.config.antiCall;
+            response.push('┌──『 Anti Call Protection 』');
+            response.push(`└─❒ ${this.config.antiCall ? '✅ Enabled' : '❌ Disabled'}`);
         }
 
         if (response.length > 0) {
             await this.sock.sendMessage(sender, { 
-                text: response.join('\n')
+                text: response.join('\n'),
+                contextInfo: {
+                    externalAdReply: {
+                        title: "CloudNextra WhatsApp Bot",
+                        body: "Professional WhatsApp Automation",
+                        mediaType: 1,
+                        showAdAttribution: true,
+                        renderLargerThumbnail: false
+                    }
+                }
             });
         }
     }
 
     isControlCommand(msg) {
-        const commands = ['!panel', '!autoread', '!antilink', '!anticall'];
+        const commands = ['.panel', '.autoread', '.antilink', '.anticall'];
         return commands.some(cmd => msg.toLowerCase().startsWith(cmd));
     }
 
