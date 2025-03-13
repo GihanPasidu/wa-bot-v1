@@ -1,3 +1,6 @@
+// Add crypto polyfill for GitHub Actions environment
+global.crypto = require('crypto');
+
 require('dotenv').config();
 const WhatsAppBot = require('./src/bot');
 
