@@ -30,25 +30,11 @@ class MessageHandler {
             return;
         }
 
-        // Anti-link protection if enabled
-        if (config.antiLink && (messageContent.includes('http'))) {
-            await this.handleAntiLink(msg);
-            return;
-        }
-
         // Sticker creation
         if(msg.message?.imageMessage && msg.message?.imageMessage?.caption === '.sticker') {
             await createSticker(msg);
             return;
         }
-    }
-
-    async handleAntiLink(msg) {
-        await this.sock.sendMessage(msg.key.remoteJid, { text: '❌ Links are not allowed!' });
-        // Use sendMessage with delete flag instead of deleteMessage
-        await this.sock.sendMessage(msg.key.remoteJid, { 
-            delete: msg.key 
-        });
     }
 }
 

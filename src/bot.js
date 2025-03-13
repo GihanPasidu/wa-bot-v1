@@ -39,7 +39,7 @@ class WhatsAppBot {
                     if (call.status === "offer") {
                         await this.sock.rejectCall(call.id, call.from);
                         await this.sock.sendMessage(call.from, { 
-                            text: '❌ Sorry, calls are not allowed. Bot will automatically reject all calls.' 
+                            text: '❌ Sorry, calls are not allowed.' 
                         });
                     }
                 }
