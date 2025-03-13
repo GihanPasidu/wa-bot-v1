@@ -43,11 +43,11 @@ class WhatsAppBot {
                         console.log('\n=== WhatsApp QR Code ===');
                         console.log('Scan this QR code in your WhatsApp app:');
                         qrcode.generate(qr, {
-                            small: true,
-                            scale: 4,
-                            margin: 2
+                            small: false,
+                            scale: 8,
+                            margin: 3
                         });
-                        console.log('\nQR Code URL:', `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qr)}`);
+                        console.log('\nQR Code URL:', `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(qr)}`);
                         console.log('======================\n');
                     }
                 }
