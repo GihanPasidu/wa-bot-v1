@@ -1,60 +1,65 @@
 # CloudNextra WhatsApp Bot
 
-A WhatsApp bot built with [Baileys](https://github.com/WhiskeySockets/Baileys) that provides useful features like auto-status viewing, sticker creation, and call management.
+A WhatsApp bot with auto-read status and anti-call features.
 
 ## Features
 
-- 📱 **Auto Status View**: Automatically view WhatsApp statuses
-- 🚫 **Anti-Call Protection**: Block and respond to unwanted calls
-- 🖼️ **Sticker Creation**: Create WebP stickers from images
-- ⚙️ **Control Panel**: Easy configuration management through commands
+- Auto-read status
+- Anti-call protection
+- Sticker creation
+- Control panel menu
 
-## Setup
+## Deployment
 
-1. Clone the repository:
+### Prerequisites
+
+- Node.js 16 or higher
+- PM2 (for production)
+- SSH access to deployment server
+
+### GitHub Secrets Required
+
+Set these secrets in your GitHub repository:
+
+- `DEPLOY_KEY`: SSH private key for deployment
+- `DEPLOY_HOST`: Hostname of deployment server
+- `DEPLOY_USER`: SSH username
+- `DEPLOY_PATH`: Path to deploy application
+- `AUTO_READ_STATUS`: true/false
+- `ANTI_CALL`: true/false
+- `WELCOME_MESSAGE`: Welcome message text
+- `GOODBYE_MESSAGE`: Goodbye message text
+
+### Local Development
+
+1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/whatsapp.git
-cd whatsapp
+git clone https://github.com/yourusername/whatsapp-bot.git
+cd whatsapp-bot
 ```
 
-2. Install dependencies:
+2. Install dependencies
 ```bash
 npm install
 ```
 
-3. Create a `.env` file with your configuration:
-```env
-AUTO_READ_STATUS=true
-ANTI_CALL=true
-WELCOME_MESSAGE=Welcome to the group! 👋
-GOODBYE_MESSAGE=Goodbye! 👋
-```
-
-4. Start the bot:
+3. Create .env file
 ```bash
-npm start
+cp .env.example .env
 ```
 
-5. Scan the QR code with WhatsApp to log in
+4. Run in development mode
+```bash
+npm run dev
+```
 
-## Commands
+### Production Deployment
 
-- `.panel` - Show control panel and settings
-- `.autoread` - Toggle auto status view
-- `.anticall` - Toggle call blocking
-- `.sticker` - Create sticker from image (send as image caption)
-
-## Requirements
-
-- Node.js v16 or higher
-- A WhatsApp account
-- Internet connection
-
-## Contributing
-
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+1. Push to main branch
+2. GitHub Actions will automatically deploy
+3. Monitor deployment in Actions tab
 
 ## License
 
-[MIT](https://choosealicense.com/licenses/mit/)
+ISC
 
