@@ -1,60 +1,60 @@
-# WhatsApp Bot
+# CloudNextra WhatsApp Bot
 
-A feature-rich WhatsApp bot built with Node.js and Baileys library.
+A WhatsApp bot built with [Baileys](https://github.com/WhiskeySockets/Baileys) that provides useful features like auto-status viewing, sticker creation, and call management.
 
 ## Features
 
-- 🤖 Auto read messages
-- 🔗 Anti-link protection
-- ☎️ Auto reject calls
-- 🖼️ Sticker creation from images
-- ⚙️ Configurable settings via environment variables
+- 📱 **Auto Status View**: Automatically view WhatsApp statuses
+- 🚫 **Anti-Call Protection**: Block and respond to unwanted calls
+- 🖼️ **Sticker Creation**: Create WebP stickers from images
+- ⚙️ **Control Panel**: Easy configuration management through commands
 
-## Installation
+## Setup
 
-1. Clone the repository
+1. Clone the repository:
 ```bash
 git clone https://github.com/yourusername/whatsapp.git
 cd whatsapp
 ```
 
-2. Install dependencies
+2. Install dependencies:
 ```bash
 npm install
 ```
 
-3. Configure environment variables by copying `.env.example` to `.env`
-```bash
-cp .env.example .env
-```
-
-4. Edit `.env` file with your preferred settings:
-```properties
+3. Create a `.env` file with your configuration:
+```env
 AUTO_READ_STATUS=true
-ANTI_LINK=true
 ANTI_CALL=true
 WELCOME_MESSAGE=Welcome to the group! 👋
 GOODBYE_MESSAGE=Goodbye! 👋
 ```
 
-5. Start the bot
+4. Start the bot:
 ```bash
 npm start
 ```
 
-## Usage
+5. Scan the QR code with WhatsApp to log in
 
-1. Scan the QR code that appears in the terminal with your WhatsApp
-2. The bot will now respond to commands and enforce configured settings
-3. To create a sticker, send an image with caption `!sticker`
+## Commands
 
-## Features Configuration
+- `.panel` - Show control panel and settings
+- `.autoread` - Toggle auto status view
+- `.anticall` - Toggle call blocking
+- `.sticker` - Create sticker from image (send as image caption)
 
-- `AUTO_READ_STATUS`: Enable/disable automatic message read
-- `ANTI_LINK`: Enable/disable link protection
-- `ANTI_CALL`: Enable/disable automatic call rejection
+## Requirements
+
+- Node.js v16 or higher
+- A WhatsApp account
+- Internet connection
+
+## Contributing
+
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
 ## License
 
-MIT License - see LICENSE file for details
+[MIT](https://choosealicense.com/licenses/mit/)
 

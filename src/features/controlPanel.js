@@ -5,56 +5,83 @@ class ControlPanel {
             autoRead: process.env.AUTO_READ_STATUS === 'true',
             antiCall: process.env.ANTI_CALL === 'true'
         };
+        console.log('[CONTROL] Control panel initialized with config:', this.config);
     }
 
-    async handleControlCommand(msg, sender) {
-        const command = msg.toLowerCase();
-        const response = [];
+    updateSocket(sock) {
+        this.sock = sock;
+    }
 
-        if (command === '.panel') {
-            response.push('╭━━━ *CLOUDNEXTRA BOT* ━━━┄⃟ ');
-            response.push('│');
-            response.push('│ *System Status:*');
-            response.push(`│ ⚡ Auto view Status: ${this.config.autoRead ? '✅' : '❌'}`);
-            response.push(`│ 📵 Anti Call: ${this.config.antiCall ? '✅' : '❌'}`);
-            response.push('│');
-            response.push('│ *Command List:*');
-            response.push('│ ▢ .panel - Display this menu');
-            response.push('│ ▢ .autoread - Toggle auto read');
-            response.push('│ ▢ .anticall - Toggle anti call');
-            response.push('│ ▢ .clear - Clear all sessions');
-            response.push('│');
-            response.push('│ *CloudNextra Bot v1.0*');
-            response.push('╰━━━━━━━━━━━━━━━┄⃟ ');
-        } else if (command === '.autoread') {
-            this.config.autoRead = !this.config.autoRead;
-            response.push('┌──『 Auto Read Status 』');
-            response.push(`└─❒ ${this.config.autoRead ? '✅ Enabled' : '❌ Disabled'}`);
-        } else if (command === '.anticall') {
-            this.config.antiCall = !this.config.antiCall;
-            response.push('┌──『 Anti Call Protection 』');
-            response.push(`└─❒ ${this.config.antiCall ? '✅ Enabled' : '❌ Disabled'}`);
+    async handleControlCommand(msg, sender, sock) {
+        this.sock = sock || this.sock;
+        const command = msg.toLowerCase();
+        console.log('[CONTROL] Received command:', command);
+
+        let response = '';
+
+        switch(command) {
+            case '.panel':
+                response = this.getPanelMenu();
+                break;
+            case '.autoread':
+                this.config.autoRead = !this.config.autoRead;
+                response = `👁️ Auto read status has been ${this.config.autoRead ? 'enabled ✅' : 'disabled ❌'}`;
+                break;
+            case '.anticall':
+                this.config.antiCall = !this.config.antiCall;
+                response = `📵 Anti call has been ${this.config.antiCall ? 'enabled ✅' : 'disabled ❌'}`;
+                break;
+            case '.sticker':
+                response = `🖼️ *Sticker Command*\n\n` +
+                         `📝 To create a sticker:\n` +
+                         `1️⃣ Send an image\n` +
+                         `2️⃣ Add caption .sticker\n\n` +
+                         `✨ The bot will convert your image to a sticker!`;
+                break;
+            default:
+                return;
         }
 
-        if (response.length > 0) {
-            await this.sock.sendMessage(sender, { 
-                text: response.join('\n'),
+        if (response) {
+            await this.sock.sendMessage(sender, {
+                text: response,
                 contextInfo: {
                     externalAdReply: {
-                        title: "CloudNextra WhatsApp Bot",
-                        body: "Professional WhatsApp Automation",
+                        title: "CloudNextra Bot",
+                        body: "WhatsApp Automation",
                         mediaType: 1,
-                        showAdAttribution: true,
-                        renderLargerThumbnail: false
+                        thumbnail: null,
+                        showAdAttribution: true
                     }
                 }
             });
         }
     }
 
+    getPanelMenu() {
+        const sections = [
+            '╭━━━ *🤖 CLOUDNEXTRA BOT* ━━━┄⃟ ',
+            '│',
+            '│ 📊 *System Status*',
+            `│ ${this.config.autoRead ? '✅' : '❌'} 👁️ Auto Status View`,
+            `│ ${this.config.antiCall ? '✅' : '❌'} 📵 Anti Call Protection`,
+            '│',
+            '│ ⌨️ *Commands List*',
+            '│ • 📋 .panel     - Show this menu',
+            '│ • 👀 .autoread  - Toggle status view',
+            '│ • 📞 .anticall  - Toggle call block',
+            '│ • 🖼️ .sticker   - Create sticker',
+            '│',
+            '│ 🔮 Version: 1.0.0',
+            '╰━━━━━━━━━━━━━━━┄⃟ '
+        ];
+
+        return sections.join('\n');
+    }
+
     isControlCommand(msg) {
-        const commands = ['.panel', '.autoread', '.anticall'];
-        return commands.some(cmd => msg.toLowerCase().startsWith(cmd));
+        const commands = ['.panel', '.autoread', '.anticall', '.sticker'];
+        return commands.some(cmd => msg.toLowerCase() === cmd);
     }
 
     getConfig() {
