@@ -14,6 +14,18 @@ let bot;
 let server;
 let qrCode = null; // Store current QR code
 
+// Add ping function
+async function pingServer() {
+    if (process.env.SELF_PING_URL) {
+        try {
+            const res = await fetch(process.env.SELF_PING_URL);
+            console.log('[PING] Server pinged successfully:', res.status);
+        } catch (err) {
+            console.error('[PING] Failed to ping server:', err.message);
+        }
+    }
+}
+
 async function startBot() {
     try {
         console.log('[BOT] Starting session...');
@@ -32,6 +44,10 @@ async function startBot() {
             if (req.url === '/health') {
                 res.writeHead(200);
                 res.end('OK');
+            } else if (req.url === '/ping') {
+                // Add ping endpoint
+                res.writeHead(200);
+                res.end('PONG');
             } else if (req.url === '/qr') {
                 if (qrCode) {
                     res.writeHead(200, { 'Content-Type': 'text/html' });
@@ -63,6 +79,12 @@ async function startBot() {
         server.listen(PORT, () => {
             console.log(`Health check server running on port ${PORT}`);
         });
+
+        // Start ping interval after server starts
+        if (process.env.SELF_PING_URL) {
+            console.log('[PING] Starting auto-ping service...');
+            setInterval(pingServer, 5 * 60 * 1000); // Ping every 5 minutes
+        }
 
         // Handle server errors
         server.on('error', (err) => {
