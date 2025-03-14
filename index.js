@@ -5,6 +5,7 @@ if (!global.crypto) global.crypto = webcrypto;
 require('dotenv').config();
 const http = require('http');
 const WhatsAppBot = require('./src/bot');
+const { clearAuthState } = require('./src/auth/authState');
 
 // Use Render assigned port or fallback to 10000
 const PORT = process.env.PORT || 10000;
@@ -14,6 +15,16 @@ let server;
 
 async function startBot() {
     try {
+        // Clear auth state on startup
+        console.log('[BOT] Clearing previous auth state...');
+        await clearAuthState();
+        console.log('[BOT] Auth state cleared. Ready for new connection.');
+        
+        // Add delay before starting bot
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        console.log('\n[BOT] Starting new session. Please wait for QR code...\n');
+        
         bot = new WhatsAppBot();
         await bot.connect();
         
@@ -38,7 +49,7 @@ async function startBot() {
         });
 
     } catch (error) {
-        console.error('Failed to start bot:', error);
+        console.error('[BOT] Failed to start bot:', error);
         process.exit(1);
     }
 }

@@ -41,7 +41,7 @@ class WhatsAppBot {
                 printQRInTerminal: true, // Always print QR code
                 logger,
                 markOnlineOnConnect: false,
-                connectTimeoutMs: 90000,
+                connectTimeoutMs: 60000,
                 retryRequestDelayMs: 2000,
                 // Add keepAliveIntervalMs
                 keepAliveIntervalMs: 15000,
@@ -52,7 +52,7 @@ class WhatsAppBot {
                 // Browser identification
                 browser: ['CloudNextra Bot', 'Chrome', '1.0.0'],
                 // Add QR options
-                qrTimeout: 60000, // QR timeout in ms
+                qrTimeout: 30000, // QR timeout in ms
                 qrFormat: {
                     small: false, // Use larger QR for better visibility
                     scale: 8     // Increase QR code size
@@ -65,6 +65,9 @@ class WhatsAppBot {
                 // Add system recovery
                 systemReconnect: true
             });
+
+            // Force QR code display
+            let qrDisplayed = false;
 
             // Add ping interval
             setInterval(() => {
@@ -82,68 +85,45 @@ class WhatsAppBot {
             this.sock.ev.on('connection.update', async (update) => {
                 const { connection, lastDisconnect, qr } = update;
                 
-                // Add stream error detection
-                if (lastDisconnect?.error?.output?.statusCode === 515) {
-                    console.log('[BOT] Stream error in connection, reconnecting...');
-                    await this.sock.end();
-                    setTimeout(() => this.connect(), 5000);
-                    return;
-                }
-
-                if (qr) {
-                    console.clear(); // Clear console for better visibility
-                    console.log('\n');
+                if (qr && !qrDisplayed) {
+                    qrDisplayed = true;
+                    console.clear();
+                    console.log('\n[BOT] Please scan this QR code:');
                     console.log('╭═══════════════════════════╮');
                     console.log('║    SCAN QR CODE BELOW     ║');
                     console.log('╰═══════════════════════════╯\n');
                     
-                    // Generate QR with better visibility
                     qrcode.generate(qr, {
                         small: false,
                         scale: 8,
                         margin: 2
                     });
                     
-                    console.log('\n╭═══════════════════════════╮');
-                    console.log('║  Waiting for connection... ║');
-                    console.log('╰═══════════════════════════╯\n');
-
-                    // Also provide QR URL as fallback
-                    console.log('Alternative QR URL:');
+                    console.log('\nQR Code URL:');
                     console.log(`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(qr)}\n`);
                 }
                 
                 if (connection === 'close') {
-                    console.log('[BOT] Connection closed, reconnecting...');
-                    const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+                    console.log('[BOT] Connection closed. Clearing auth state...');
+                    qrDisplayed = false;
+                    // Always clear auth and restart for new QR
+                    await clearAuthState();
+                    console.log('[BOT] Auth state cleared. Starting new session...');
                     
-                    if (lastDisconnect?.error?.output?.statusCode === DisconnectReason.loggedOut) {
-                        console.log('[BOT] Device logged out. Clearing auth state...');
-                        await clearAuthState();
-                        console.log('[BOT] Auth state cleared. Please scan QR code with new device.');
-                        // Reconnect to get new QR code
-                        this.retryCount = 0;
-                        setTimeout(() => this.connect(), 3000);
-                        return;
-                    }
+                    // Reset retry counter
+                    this.retryCount = 0;
                     
-                    if (shouldReconnect && this.retryCount < this.maxRetries) {
-                        console.log(`[BOT] Reconnecting... (${this.retryCount}/${this.maxRetries})`);
-                        this.retryCount++;
-                        setTimeout(() => this.connect(), 3000);
-                    } else if (this.retryCount >= this.maxRetries) {
-                        console.log('[BOT] Max retries reached. Clearing auth state...');
-                        clearAuthState().then(() => {
-                            console.log('[BOT] Auth state cleared. Please restart the bot.');
-                            process.exit(1);
-                        });
-                    }
-                } else if (connection === 'open') {
+                    // Start new session
+                    setTimeout(() => this.connect(), 3000);
+                    return;
+                } 
+                
+                if (connection === 'open') {
+                    qrDisplayed = false;
                     console.log('[BOT] Connected successfully!');
-                    // Reinitialize message handler after reconnection
                     this.messageHandler = new MessageHandler(this.sock);
                     
-                    // Send alive message to self
+                    // Send alive message
                     const botNumber = this.sock.user.id.split(':')[0];
                     await this.sock.sendMessage(`${botNumber}@s.whatsapp.net`, {
                         text: '🤖 *CloudNextra Bot Alive*\n\n_Bot is up and running!_',
