@@ -14,15 +14,31 @@ class WhatsAppBot {
 
     async connect() {
         try {
+            // Verify crypto is available
+            if (!global.crypto || !global.crypto.subtle) {
+                throw new Error('WebCrypto API is not available');
+            }
+
             console.log('[BOT] Starting WhatsApp bot...');
             const { state, saveCreds } = await getAuthState();
 
-            // Use Pino logger with error level to reduce noise
-            const logger = pino({ level: 'error' });
+            // Use Pino logger with error level and custom error handling
+            const logger = pino({ 
+                level: 'error',
+                hooks: {
+                    logMethod(inputArgs, method) {
+                        if (inputArgs[0].err && inputArgs[0].err.message.includes('importKey')) {
+                            console.error('[BOT] Crypto error detected, attempting recovery...');
+                            this.clearAuthState();
+                        }
+                        return method.apply(this, inputArgs);
+                    }
+                }
+            });
 
             this.sock = makeWASocket({
                 auth: state,
-                printQRInTerminal: !process.env.CI,
+                printQRInTerminal: true, // Always print QR code
                 logger,
                 markOnlineOnConnect: false,
                 connectTimeoutMs: 60000,
@@ -38,18 +54,12 @@ class WhatsAppBot {
                 const { connection, lastDisconnect, qr } = update;
                 
                 if (qr) {
-                    // Print QR details for CI environment
-                    if (process.env.CI) {
-                        console.log('\n=== WhatsApp QR Code ===');
-                        console.log('Scan this QR code in your WhatsApp app:');
-                        qrcode.generate(qr, {
-                            small: false,
-                            scale: 8,
-                            margin: 3
-                        });
-                        console.log('\nQR Code URL:', `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(qr)}`);
-                        console.log('======================\n');
-                    }
+                    // Always print QR code for all environments
+                    console.log('\n=== WhatsApp QR Code ===');
+                    console.log('Scan this QR code in your WhatsApp app:');
+                    qrcode.generate(qr, { small: true });
+                    console.log('\nQR Code URL:', `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(qr)}`);
+                    console.log('======================\n');
                 }
                 
                 if (connection === 'close') {
@@ -94,7 +104,12 @@ class WhatsAppBot {
 
             this.sock.ev.on('creds.update', saveCreds);
         } catch (error) {
-            console.error('[BOT] Failed to start:', error.message);
+            console.error('[BOT] Critical error:', error.message);
+            if (error.message.includes('WebCrypto')) {
+                console.error('[BOT] WebCrypto not available. Please check system configuration.');
+                process.exit(1);
+            }
+            throw error;
         }
     }
 }

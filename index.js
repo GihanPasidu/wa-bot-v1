@@ -1,5 +1,6 @@
-// Add crypto polyfill for GitHub Actions environment
-global.crypto = require('crypto');
+// Add crypto polyfill for container environment
+const { webcrypto } = require('node:crypto');
+if (!global.crypto) global.crypto = webcrypto;
 
 require('dotenv').config();
 const http = require('http');
