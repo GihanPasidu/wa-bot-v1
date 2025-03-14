@@ -41,17 +41,38 @@ class WhatsAppBot {
                 printQRInTerminal: true, // Always print QR code
                 logger,
                 markOnlineOnConnect: false,
-                connectTimeoutMs: 60000,
-                retryRequestDelayMs: 1000,
+                connectTimeoutMs: 90000,
+                retryRequestDelayMs: 2000,
                 // Add keepAliveIntervalMs
-                keepAliveIntervalMs: 10000,
+                keepAliveIntervalMs: 15000,
                 // Add default timeout
                 defaultQueryTimeoutMs: 60000,
                 // Add version
                 version: [2, 2323, 4],
                 // Browser identification
-                browser: ['CloudNextra Bot', 'Chrome', '1.0.0']
+                browser: ['CloudNextra Bot', 'Chrome', '1.0.0'],
+                // Add QR options
+                qrTimeout: 60000, // QR timeout in ms
+                qrFormat: {
+                    small: false, // Use larger QR for better visibility
+                    scale: 8     // Increase QR code size
+                },
+                // Add attempt counts
+                retries: 5,
+                maxRetryAttempts: 10,
+                // Add ping configs
+                pingIntervalMs: 15000,
+                // Add system recovery
+                systemReconnect: true
             });
+
+            // Add ping interval
+            setInterval(() => {
+                if (this.sock?.ws?.readyState === this.sock?.ws?.OPEN) {
+                    this.sock.sendRawMessage('?,,')
+                        .catch(err => console.warn('[BOT] Ping failed:', err.message));
+                }
+            }, 15000);
 
             // Initialize message handler right after socket creation
             this.messageHandler = new MessageHandler(this.sock);
@@ -70,20 +91,44 @@ class WhatsAppBot {
                 }
 
                 if (qr) {
-                    // Always print QR code for all environments
-                    console.log('\n=== WhatsApp QR Code ===');
-                    console.log('Scan this QR code in your WhatsApp app:');
-                    qrcode.generate(qr, { small: true });
-                    console.log('\nQR Code URL:', `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(qr)}`);
-                    console.log('======================\n');
+                    console.clear(); // Clear console for better visibility
+                    console.log('\n');
+                    console.log('╭═══════════════════════════╮');
+                    console.log('║    SCAN QR CODE BELOW     ║');
+                    console.log('╰═══════════════════════════╯\n');
+                    
+                    // Generate QR with better visibility
+                    qrcode.generate(qr, {
+                        small: false,
+                        scale: 8,
+                        margin: 2
+                    });
+                    
+                    console.log('\n╭═══════════════════════════╮');
+                    console.log('║  Waiting for connection... ║');
+                    console.log('╰═══════════════════════════╯\n');
+
+                    // Also provide QR URL as fallback
+                    console.log('Alternative QR URL:');
+                    console.log(`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(qr)}\n`);
                 }
                 
                 if (connection === 'close') {
                     console.log('[BOT] Connection closed, reconnecting...');
                     const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
                     
+                    if (lastDisconnect?.error?.output?.statusCode === DisconnectReason.loggedOut) {
+                        console.log('[BOT] Device logged out. Clearing auth state...');
+                        await clearAuthState();
+                        console.log('[BOT] Auth state cleared. Please scan QR code with new device.');
+                        // Reconnect to get new QR code
+                        this.retryCount = 0;
+                        setTimeout(() => this.connect(), 3000);
+                        return;
+                    }
+                    
                     if (shouldReconnect && this.retryCount < this.maxRetries) {
-                        console.log(`[BOT] Reconnecting... (${this.retryCount}/$this.maxRetries)`);
+                        console.log(`[BOT] Reconnecting... (${this.retryCount}/${this.maxRetries})`);
                         this.retryCount++;
                         setTimeout(() => this.connect(), 3000);
                     } else if (this.retryCount >= this.maxRetries) {
@@ -97,6 +142,21 @@ class WhatsAppBot {
                     console.log('[BOT] Connected successfully!');
                     // Reinitialize message handler after reconnection
                     this.messageHandler = new MessageHandler(this.sock);
+                    
+                    // Send alive message to self
+                    const botNumber = this.sock.user.id.split(':')[0];
+                    await this.sock.sendMessage(`${botNumber}@s.whatsapp.net`, {
+                        text: '🤖 *CloudNextra Bot Alive*\n\n_Bot is up and running!_',
+                        contextInfo: {
+                            externalAdReply: {
+                                title: "CloudNextra Bot",
+                                body: "WhatsApp Automation",
+                                mediaType: 1,
+                                thumbnail: null,
+                                showAdAttribution: true
+                            }
+                        }
+                    });
                 }
             });
 
@@ -113,12 +173,24 @@ class WhatsAppBot {
             this.sock.ev.on('messages.upsert', async ({ messages }) => {
                 try {
                     console.log('[BOT] Received message update');
-                    await this.messageHandler.handleMessage({ messages, sock: this.sock });
+                    for (const msg of messages) {
+                        if (msg.key.remoteJid === 'status@broadcast') {
+                            console.log('[BOT] Skipping status message');
+                            continue;
+                        }
+                        // Process message
+                        await this.messageHandler.handleMessage({ messages: [msg], sock: this.sock });
+                    }
                 } catch (error) {
-                    console.error('[BOT] Message handling error:', error);
-                    // Don't rethrow to prevent crash
                     if (error.message.includes('No SenderKeyRecord')) {
-                        console.log('[BOT] Group message decryption failed - continuing...');
+                        console.log('[BOT] Missing sender key, requesting new key...');
+                        try {
+                            await this.sock.requestSenderKey(msg.key.remoteJid);
+                        } catch (err) {
+                            console.warn('[BOT] Failed to request sender key:', err.message);
+                        }
+                    } else {
+                        console.error('[BOT] Message handling error:', error);
                     }
                 }
             });
