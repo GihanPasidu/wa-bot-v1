@@ -11,11 +11,11 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
+      - key: RENDER
+        value: true
     disk:
       name: auth-data
-      mountPath: /app/auth_info
+      mountPath: /data
       sizeGB: 1
     healthCheckPath: /health
     autoDeploy: false
@@ -31,6 +31,11 @@ services:
     resources:
       cpu: 0.5
       memory: 512Mi
+    healthCheck:
+      grace: 10
+      interval: 30
+      timeout: 5
+      retries: 3
 
   # Add a cron job to keep the instance alive
   - type: cron

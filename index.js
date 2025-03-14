@@ -4,6 +4,7 @@ if (!global.crypto) global.crypto = webcrypto;
 
 require('dotenv').config();
 const http = require('http');
+const fetch = require('node-fetch'); // Add this import
 const WhatsAppBot = require('./src/bot');
 const { clearAuthState } = require('./src/auth/authState');
 
@@ -14,14 +15,21 @@ let bot;
 let server;
 let qrCode = null; // Store current QR code
 
-// Add ping function
+// Update ping function
 async function pingServer() {
     if (process.env.SELF_PING_URL) {
         try {
-            const res = await fetch(process.env.SELF_PING_URL);
-            console.log('[PING] Server pinged successfully:', res.status);
+            const res = await fetch(process.env.SELF_PING_URL, {
+                method: 'GET',
+                headers: { 'User-Agent': 'WhatsApp-Bot/1.0' }
+            });
+            if (res.ok) {
+                console.log('[PING] Server pinged successfully:', res.status);
+            } else {
+                console.error('[PING] Server ping failed:', res.status);
+            }
         } catch (err) {
-            console.error('[PING] Failed to ping server:', err.message);
+            console.error('[PING] Failed to ping server:', err.message); 
         }
     }
 }
@@ -97,16 +105,19 @@ async function startBot() {
     }
 }
 
-// Graceful shutdown
+// Update SIGTERM handler for graceful shutdown
 process.on('SIGTERM', async () => {
-    console.log('SIGTERM received. Starting graceful shutdown...');
+    console.log('[BOT] SIGTERM received. Starting graceful shutdown...');
     
     try {
+        // Add delay before cleanup
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
         // Close server first
         if (server) {
             await new Promise((resolve) => {
                 server.close(() => {
-                    console.log('HTTP server closed');
+                    console.log('[BOT] HTTP server closed');
                     resolve();
                 });
             });
@@ -115,15 +126,16 @@ process.on('SIGTERM', async () => {
         // Cleanup bot resources
         if (bot && bot.sock) {
             await bot.sock.end();
-            console.log('WhatsApp connection closed');
+            console.log('[BOT] WhatsApp connection closed');
         }
 
-        // Allow time for cleanup
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        // Final cleanup delay
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
+        console.log('[BOT] Graceful shutdown completed');
         process.exit(0);
     } catch (error) {
-        console.error('Error during shutdown:', error);
+        console.error('[BOT] Error during shutdown:', error);
         process.exit(1);
     }
 });
