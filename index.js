@@ -12,6 +12,7 @@ const PORT = process.env.PORT || 10000;
 
 let bot;
 let server;
+let qrCode = null; // Store current QR code
 
 async function startBot() {
     try {
@@ -21,6 +22,9 @@ async function startBot() {
         await new Promise(resolve => setTimeout(resolve, 3000));
         
         bot = new WhatsAppBot();
+        bot.setQRCallback((qr) => {
+            qrCode = qr; // Store QR code when generated
+        });
         await bot.connect();
         
         // Start HTTP server after bot connects
@@ -28,6 +32,28 @@ async function startBot() {
             if (req.url === '/health') {
                 res.writeHead(200);
                 res.end('OK');
+            } else if (req.url === '/qr') {
+                if (qrCode) {
+                    res.writeHead(200, { 'Content-Type': 'text/html' });
+                    res.end(`
+                        <html>
+                            <head>
+                                <title>WhatsApp QR Code</title>
+                                <meta name="viewport" content="width=device-width, initial-scale=1">
+                            </head>
+                            <body style="display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#f0f0f0;">
+                                <div style="text-align:center;">
+                                    <h2>Scan QR Code to Connect</h2>
+                                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrCode)}">
+                                    <p>Please scan within 20 seconds</p>
+                                </div>
+                            </body>
+                        </html>
+                    `);
+                } else {
+                    res.writeHead(404);
+                    res.end('No QR code available');
+                }
             } else {
                 res.writeHead(404);
                 res.end();

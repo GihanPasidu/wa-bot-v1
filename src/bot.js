@@ -12,6 +12,11 @@ class WhatsAppBot {
         this.qrDisplayCount = 0;
         this.maxQrDisplays = 5;
         this.qrShowing = false;
+        this.qrCallback = null;
+    }
+
+    setQRCallback(callback) {
+        this.qrCallback = callback;
     }
 
     async connect() {
@@ -74,7 +79,13 @@ class WhatsAppBot {
                         return;
                     }
 
+                    // Call QR callback if set
+                    if (this.qrCallback) {
+                        this.qrCallback(qr);
+                    }
+
                     console.log('\n[BOT] Please scan this QR code:');
+                    console.log(`[BOT] Or visit: ${process.env.RENDER_EXTERNAL_URL}/qr`);
                     qrcode.generate(qr, {small: true});
                 }
 
