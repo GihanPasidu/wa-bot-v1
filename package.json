@@ -1,8 +1,11 @@
 {
   "name": "cloudnextra-whatsapp-bot",
   "version": "1.0.0",
+  "description": "WhatsApp bot for Render deployment",
+  "main": "index.js",
   "scripts": {
     "start": "node index.js",
+    "dev": "nodemon index.js",
     "build": "npm install --platform=linux --arch=x64 sharp",
     "test": "echo \"No tests specified\" && exit 0"
   },
@@ -17,6 +20,6 @@
     "nodemon": "^3.0.1"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=16.0.0"
   }
 }

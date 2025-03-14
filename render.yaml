@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: whatsapp-bot
+    env: docker
+    region: singapore
+    plan: free
+    branch: main
+    envVars:
+      - key: AUTO_READ_STATUS
+        value: "true"
+      - key: ANTI_CALL
+        value: "true"
+    disk:
+      name: auth
+      mountPath: /app/auth_info
+      sizeGB: 1
+    healthCheckPath: /
+    buildCommand: npm install
+    startCommand: npm start
