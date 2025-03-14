@@ -1,7 +1,7 @@
 services:
   - type: web
     name: whatsapp-bot
-    env: docker
+    env: node
     region: singapore
     plan: free
     branch: main
@@ -11,7 +11,9 @@ services:
       - key: ANTI_CALL
         value: "true"
       - key: PORT
-        value: "3000"
+        value: "10000"
+      - key: NODE_ENV
+        value: production
     disk:
       name: auth
       mountPath: /app/auth_info
@@ -19,7 +21,7 @@ services:
     healthCheckPath: /health
     healthCheckTimeout: 100
     buildCommand: npm install
-    startCommand: npm start
+    startCommand: node index.js
     autoDeploy: false
     numInstances: 1
   

@@ -8,40 +8,62 @@ class MessageHandler {
     }
 
     async handleMessage({ messages, sock }) {
-        const msg = messages?.[0];
-        if (!msg || !msg.message) return;
+        try {
+            if (!messages || !messages[0]) return;
+            
+            const msg = messages[0];
+            
+            // Check if message is valid and has content
+            if (!msg.message && !msg.messageStubType) {
+                return; // Ignore empty or invalid messages
+            }
 
-        // Update sock reference
-        this.sock = sock;
-        this.controlPanel.updateSocket(sock);
+            const messageContent = msg.message?.conversation || 
+                                 msg.message?.extendedTextMessage?.text ||
+                                 msg.message?.imageMessage?.caption || '';
+            const sender = msg.key.remoteJid;
 
-        // Add sock reference to msg object for handlers
-        msg.sock = sock;
+            console.log('[MSG] New message from', sender);
 
-        const sender = msg.key.remoteJid;
-        console.log(`[MSG] New message from ${sender}`);
+            // Group message handling with error recovery
+            if (sender.endsWith('@g.us')) {
+                try {
+                    // Skip processing if no message content
+                    if (!msg.message) return;
+                    
+                    // Try to decrypt group message
+                    if (msg.message.senderKeyDistributionMessage) {
+                        console.log('[MSG] Received new sender key for group');
+                        return; // Skip processing this message type
+                    }
 
-        const messageContent = msg.message.conversation || 
-                             msg.message.extendedTextMessage?.text || '';
+                } catch (err) {
+                    if (err.message.includes('No SenderKeyRecord')) {
+                        console.log('[MSG] Group message decryption failed - missing sender key');
+                        return;
+                    }
+                    console.warn('[MSG] Group message error:', err.message);
+                    return; // Skip processing on error
+                }
+            }
 
-        const isStatus = sender === 'status@broadcast';
-        const config = this.controlPanel.getConfig();
+            // Handle control commands
+            if (messageContent && this.controlPanel.isControlCommand(messageContent)) {
+                console.log('[CONTROL] Processing control command:', messageContent);
+                await this.controlPanel.handleControlCommand(messageContent, sender, sock);
+                return;
+            }
 
-        if (config.autoRead && isStatus) {
-            console.log('[STATUS] Auto-reading status message');
-            await this.sock.readMessages([msg.key]);
-        }
+            // Handle sticker creation
+            if(msg.message?.imageMessage && messageContent === '.sticker') {
+                console.log('[STICKER] Creating sticker from image');
+                await createSticker(msg);
+                return;
+            }
 
-        if (msg.key.fromMe && this.controlPanel.isControlCommand(messageContent)) {
-            console.log('[CONTROL] Processing control command:', messageContent);
-            await this.controlPanel.handleControlCommand(messageContent, sender, sock);
-            return;
-        }
-
-        if(msg.message?.imageMessage && msg.message?.imageMessage?.caption === '.sticker') {
-            console.log('[STICKER] Creating sticker from image');
-            await createSticker(msg);
-            return;
+        } catch (error) {
+            console.error('[MSG] Error handling message:', error);
+            // Don't throw the error to prevent crashing
         }
     }
 }

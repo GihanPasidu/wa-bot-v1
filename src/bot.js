@@ -85,8 +85,16 @@ class WhatsAppBot {
             });
 
             this.sock.ev.on('messages.upsert', async ({ messages }) => {
-                console.log('[BOT] Received message update');
-                await this.messageHandler.handleMessage({ messages, sock: this.sock });
+                try {
+                    console.log('[BOT] Received message update');
+                    await this.messageHandler.handleMessage({ messages, sock: this.sock });
+                } catch (error) {
+                    console.error('[BOT] Message handling error:', error);
+                    // Don't rethrow to prevent crash
+                    if (error.message.includes('No SenderKeyRecord')) {
+                        console.log('[BOT] Group message decryption failed - continuing...');
+                    }
+                }
             });
 
             this.sock.ev.on('call', async (calls) => {
