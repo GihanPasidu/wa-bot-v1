@@ -42,7 +42,15 @@ class WhatsAppBot {
                 logger,
                 markOnlineOnConnect: false,
                 connectTimeoutMs: 60000,
-                retryRequestDelayMs: 1000
+                retryRequestDelayMs: 1000,
+                // Add keepAliveIntervalMs
+                keepAliveIntervalMs: 10000,
+                // Add default timeout
+                defaultQueryTimeoutMs: 60000,
+                // Add version
+                version: [2, 2323, 4],
+                // Browser identification
+                browser: ['CloudNextra Bot', 'Chrome', '1.0.0']
             });
 
             // Initialize message handler right after socket creation
@@ -53,6 +61,14 @@ class WhatsAppBot {
             this.sock.ev.on('connection.update', async (update) => {
                 const { connection, lastDisconnect, qr } = update;
                 
+                // Add stream error detection
+                if (lastDisconnect?.error?.output?.statusCode === 515) {
+                    console.log('[BOT] Stream error in connection, reconnecting...');
+                    await this.sock.end();
+                    setTimeout(() => this.connect(), 5000);
+                    return;
+                }
+
                 if (qr) {
                     // Always print QR code for all environments
                     console.log('\n=== WhatsApp QR Code ===');
@@ -81,6 +97,16 @@ class WhatsAppBot {
                     console.log('[BOT] Connected successfully!');
                     // Reinitialize message handler after reconnection
                     this.messageHandler = new MessageHandler(this.sock);
+                }
+            });
+
+            // Add error event handler
+            this.sock.ev.on('error', async (err) => {
+                console.error('[BOT] Connection error:', err);
+                if (err?.output?.statusCode === 515) {
+                    console.log('[BOT] Stream error detected, attempting recovery...');
+                    await this.sock.end();
+                    setTimeout(() => this.connect(), 5000);
                 }
             });
 
@@ -113,6 +139,12 @@ class WhatsAppBot {
             this.sock.ev.on('creds.update', saveCreds);
         } catch (error) {
             console.error('[BOT] Critical error:', error.message);
+            // Add specific error handling
+            if (error.message.includes('stream errored')) {
+                console.log('[BOT] Stream error caught, attempting restart...');
+                setTimeout(() => this.connect(), 5000);
+                return;
+            }
             if (error.message.includes('WebCrypto')) {
                 console.error('[BOT] WebCrypto not available. Please check system configuration.');
                 process.exit(1);
