@@ -2,18 +2,30 @@ const { useMultiFileAuthState } = require('@whiskeysockets/baileys');
 const fs = require('fs');
 const path = require('path');
 
-const AUTH_FOLDER = './auth_info';
+// Use path.resolve to get absolute path from project root
+const AUTH_FOLDER = path.resolve(__dirname, '../../auth_info');
 
 async function getAuthState() {
     try {
+        // Create auth folder if it doesn't exist
         if (!fs.existsSync(AUTH_FOLDER)) {
             fs.mkdirSync(AUTH_FOLDER, { recursive: true });
+            console.log('[AUTH] Created auth folder:', AUTH_FOLDER);
         }
+
+        // Check if existing auth data exists
+        const files = fs.readdirSync(AUTH_FOLDER);
+        if (files.length > 0) {
+            console.log('[AUTH] Found existing auth data');
+        }
+
         return await useMultiFileAuthState(AUTH_FOLDER);
     } catch (error) {
         console.error('[AUTH] Error loading auth state:', error);
-        // On auth load error, clear and create fresh
-        await clearAuthState();
+        // Only clear on specific errors
+        if (error.message.includes('crypto')) {
+            await clearAuthState();
+        }
         return await useMultiFileAuthState(AUTH_FOLDER);
     }
 }
@@ -25,13 +37,26 @@ async function clearAuthState() {
             for (const file of files) {
                 fs.unlinkSync(path.join(AUTH_FOLDER, file));
             }
-            console.log('[AUTH] Auth state cleared successfully');
+            console.log('[AUTH] Auth files cleared');
             return true;
         }
     } catch (error) {
-        console.error('[AUTH] Error clearing auth state:', error);
+        console.error('[AUTH] Error clearing auth state:', error); 
     }
     return false;
 }
 
-module.exports = { getAuthState, clearAuthState };
+// Add function to check auth state
+function hasValidSession() {
+    try {
+        if (!fs.existsSync(AUTH_FOLDER)) {
+            return false;
+        }
+        const files = fs.readdirSync(AUTH_FOLDER);
+        return files.length > 0 && files.some(f => f.includes('creds.json'));
+    } catch {
+        return false;
+    }
+}
+
+module.exports = { getAuthState, clearAuthState, hasValidSession };

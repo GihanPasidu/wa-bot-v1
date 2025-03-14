@@ -15,9 +15,7 @@ let server;
 
 async function startBot() {
     try {
-        // Clear any existing sessions
-        await clearAuthState();
-        console.log('[BOT] Starting fresh session...');
+        console.log('[BOT] Starting session...');
         
         // Add longer initial delay
         await new Promise(resolve => setTimeout(resolve, 3000));
