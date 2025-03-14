@@ -14,8 +14,8 @@ const PORT = process.env.PORT || 10000;
 let bot;
 let server;
 let qrCode = null; // Store current QR code
+let isShuttingDown = false;
 
-// Update ping function
 async function pingServer() {
     if (process.env.SELF_PING_URL) {
         try {
@@ -105,15 +105,20 @@ async function startBot() {
     }
 }
 
-// Update SIGTERM handler for graceful shutdown
-process.on('SIGTERM', async () => {
-    console.log('[BOT] SIGTERM received. Starting graceful shutdown...');
+async function shutdown(signal) {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+
+    console.log(`[BOT] ${signal} received. Starting graceful shutdown...`);
     
     try {
-        // Add delay before cleanup
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Stop ping service first
+        if (pingInterval) {
+            clearInterval(pingInterval);
+            console.log('[PING] Auto-ping service stopped');
+        }
 
-        // Close server first
+        // Close HTTP server
         if (server) {
             await new Promise((resolve) => {
                 server.close(() => {
@@ -123,28 +128,65 @@ process.on('SIGTERM', async () => {
             });
         }
 
-        // Cleanup bot resources
+        // Allow time for pending operations
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Close WhatsApp connection
         if (bot && bot.sock) {
             await bot.sock.end();
             console.log('[BOT] WhatsApp connection closed');
         }
 
         // Final cleanup delay
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
-        console.log('[BOT] Graceful shutdown completed');
+        console.log('[BOT] Shutdown completed');
         process.exit(0);
     } catch (error) {
         console.error('[BOT] Error during shutdown:', error);
         process.exit(1);
     }
-});
+}
 
-// Add SIGINT handler
-process.on('SIGINT', async () => {
-    console.log('\n[BOT] Shutting down...');
-    // Removed clearAuthState() call
-    process.exit(0);
-});
+// Update signal handlers
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
-startBot().catch(console.error);
+// Add container health check
+let pingInterval;
+async function startPingService() {
+    if (process.env.SELF_PING_URL) {
+        console.log('[PING] Starting auto-ping service...');
+        // Initial ping
+        await pingServer();
+        // Setup interval
+        pingInterval = setInterval(pingServer, 5 * 60 * 1000);
+    }
+}
+
+async function startServer() {
+    try {
+        // ...existing server code...
+
+        // Start ping service after server starts
+        await startPingService();
+
+    } catch (error) {
+        console.error('[SERVER] Failed to start:', error);
+        process.exit(1);
+    }
+}
+
+// Update startup
+async function start() {
+    try {
+        await startServer();
+        await startBot();
+    } catch (error) {
+        console.error('[APP] Startup error:', error);
+        process.exit(1);
+    }
+}
+
+// Start the application
+start().catch(console.error);

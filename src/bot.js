@@ -21,11 +21,13 @@ class WhatsAppBot {
 
     async connect() {
         if (this.isConnecting) {
-            console.log('[BOT] Connection attempt in progress...');
+            console.log('[BOT] Connection attempt already in progress');
             return;
         }
 
         this.isConnecting = true;
+        let retryCount = 0;
+        const maxRetries = 3;
 
         try {
             const { state, saveCreds } = await getAuthState();
@@ -103,17 +105,21 @@ class WhatsAppBot {
                 if (connection === 'close') {
                     const statusCode = lastDisconnect?.error?.output?.statusCode;
                     
-                    // Only clear auth on explicit logout from device
                     if (statusCode === DisconnectReason.loggedOut) {
                         console.log('[BOT] Device logged out, clearing auth data...');
                         await clearAuthState();
                         this.sock = null;
                         process.exit(0); // Exit cleanly after logout
                     } else {
-                        // Just close connection without clearing auth
-                        console.log('[BOT] Connection closed, attempting reconnect...');
-                        this.isConnecting = false;
-                        setTimeout(() => this.connect(), 3000);
+                        if (!this.isShuttingDown) {
+                            retryCount++;
+                            if (retryCount > maxRetries) {
+                                console.error('[BOT] Max retries exceeded, exiting...');
+                                process.exit(1);
+                            }
+                            console.log(`[BOT] Connection attempt ${retryCount}/${maxRetries}`);
+                            setTimeout(() => this.connect(), 3000);
+                        }
                     }
                     return;
                 }
@@ -123,7 +129,6 @@ class WhatsAppBot {
                     this.qrDisplayCount = 0;
                     this.qrShowing = false;
                     console.log('[BOT] Connected successfully');
-                    // Remove message handler initialization from here
                 }
             });
 
@@ -200,10 +205,15 @@ class WhatsAppBot {
             this.sock.ev.on('creds.update', saveCreds);
 
         } catch (error) {
-            console.error('[BOT] Critical error:', error);
-            // Don't clear auth on general errors
+            console.error('[BOT] Critical connection error:', error);
+            if (retryCount < maxRetries) {
+                retryCount++;
+                setTimeout(() => this.connect(), 3000);
+            } else {
+                process.exit(1); // Let container restart
+            }
+        } finally {
             this.isConnecting = false;
-            setTimeout(() => this.connect(), 3000);
         }
     }
 }
