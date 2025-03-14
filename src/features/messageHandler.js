@@ -5,6 +5,7 @@ class MessageHandler {
     constructor(sock) {
         this.sock = sock;
         this.controlPanel = new ControlPanel(sock);
+        this.stickerHandler = require('./stickerHandler');
     }
 
     updateSocket(sock) {
@@ -97,10 +98,12 @@ class MessageHandler {
                 return;
             }
 
-            // Handle sticker creation
-            if(msg.message?.imageMessage && messageContent === '.sticker') {
-                console.log('[STICKER] Creating sticker from image');
-                await createSticker(msg);
+            // Check for sticker command
+            if (msg.message?.imageMessage && 
+                (messageContent.toLowerCase() === '.sticker' || 
+                 messageContent.toLowerCase().startsWith('.s'))) {
+                console.log('[COMMAND] Processing sticker command');
+                await createSticker(msg, currentSock);
                 return;
             }
 

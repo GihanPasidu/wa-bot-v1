@@ -40,7 +40,7 @@ class ControlPanel {
                 response = `🖼️ *Sticker Command*\n\n` +
                          `📝 To create a sticker:\n` +
                          `1️⃣ Send an image\n` +
-                         `2️⃣ Add caption .sticker\n\n` +
+                         `2️⃣ Add caption .s\n\n` +
                          `✨ The bot will convert your image to a sticker!`;
                 break;
             default:
@@ -75,7 +75,7 @@ class ControlPanel {
             '│ • 📋 .panel     - Show this menu',
             '│ • 👀 .autoread  - Toggle status view',
             '│ • 📞 .anticall  - Toggle call block',
-            '│ • 🖼️ .sticker   - Create sticker',
+            '│ • 🖼️ .s         - Create sticker',
             '│',
             '│ 🔮 Version: 1.0.0',
             '╰━━━━━━━━━━━━━━━┄⃟ '
@@ -85,7 +85,7 @@ class ControlPanel {
     }
 
     isControlCommand(msg) {
-        const commands = ['.panel', '.autoread', '.anticall', '.sticker'];
+        const commands = ['.panel', '.autoread', '.anticall', '.sticker','s'];
         return commands.some(cmd => msg.toLowerCase() === cmd);
     }
 
