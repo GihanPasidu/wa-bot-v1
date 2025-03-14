@@ -10,10 +10,21 @@ services:
         value: "true"
       - key: ANTI_CALL
         value: "true"
+      - key: PORT
+        value: "3000"
     disk:
       name: auth
       mountPath: /app/auth_info
       sizeGB: 1
-    healthCheckPath: /
+    healthCheckPath: /health
+    healthCheckTimeout: 100
     buildCommand: npm install
     startCommand: npm start
+    autoDeploy: false
+    numInstances: 1
+  
+  # Add a cron job to keep the instance alive
+  - type: cron
+    name: keep-alive
+    schedule: "*/5 * * * *"
+    command: curl $RENDER_EXTERNAL_URL/health
