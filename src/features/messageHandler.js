@@ -107,6 +107,32 @@ class MessageHandler {
                 return;
             }
 
+            // Check for auto-reply after command handling
+            if (messageContent && !this.controlPanel.isControlCommand(messageContent)) {
+                if (this.controlPanel.config.autoReply) {
+                    const autoReply = this.controlPanel.autoReply.getReply(messageContent);
+                    if (autoReply) {
+                        console.log('[AUTO-REPLY] Sending response:', {
+                            trigger: messageContent,
+                            response: autoReply
+                        });
+                        await currentSock.sendMessage(sender, {
+                            text: autoReply,
+                            contextInfo: {
+                                externalAdReply: {
+                                    title: "CloudNextra Bot",
+                                    body: "Auto-Reply System",
+                                    mediaType: 1,
+                                    thumbnail: null,
+                                    showAdAttribution: true
+                                }
+                            }
+                        });
+                        return;
+                    }
+                }
+            }
+
         } catch (error) {
             console.error('[MSG] Error handling message:', error);
             // Don't throw the error to prevent crashing
