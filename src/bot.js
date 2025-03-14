@@ -10,16 +10,14 @@ class WhatsAppBot {
         this.messageHandler = null;
         this.retryCount = 0;
         this.maxRetries = 5;
+        this.isConnecting = false;
+        this.connectionAttempts = 0;
+        this.maxConnectionAttempts = 3;
     }
 
     async connect() {
         try {
-            // Verify crypto is available
-            if (!global.crypto || !global.crypto.subtle) {
-                throw new Error('WebCrypto API is not available');
-            }
-
-            console.log('[BOT] Starting WhatsApp bot...');
+            // Don't clear auth on connect anymore
             const { state, saveCreds } = await getAuthState();
 
             // Use Pino logger with error level and custom error handling
@@ -38,91 +36,74 @@ class WhatsAppBot {
 
             this.sock = makeWASocket({
                 auth: state,
-                printQRInTerminal: true, // Always print QR code
+                printQRInTerminal: true,
                 logger,
-                markOnlineOnConnect: false,
-                connectTimeoutMs: 60000,
-                retryRequestDelayMs: 2000,
-                // Add keepAliveIntervalMs
-                keepAliveIntervalMs: 15000,
-                // Add default timeout
-                defaultQueryTimeoutMs: 60000,
-                // Add version
-                version: [2, 2323, 4],
-                // Browser identification
                 browser: ['CloudNextra Bot', 'Chrome', '1.0.0'],
-                // Add QR options
-                qrTimeout: 30000, // QR timeout in ms
-                qrFormat: {
-                    small: false, // Use larger QR for better visibility
-                    scale: 8     // Increase QR code size
-                },
-                // Add attempt counts
-                retries: 5,
-                maxRetryAttempts: 10,
-                // Add ping configs
-                pingIntervalMs: 15000,
-                // Add system recovery
-                systemReconnect: true
+                connectTimeoutMs: 60000,
+                qrTimeout: 40000,
+                defaultQueryTimeoutMs: 30000,
+                retryRequestDelayMs: 3000,
+                // Disable auto-reconnect features
+                keepAliveIntervalMs: 0,
+                retries: 0,
+                maxRetryAttempts: 0,
+                systemReconnect: false
             });
 
-            // Force QR code display
-            let qrDisplayed = false;
+            let qrDisplayCount = 0;
+            const maxQrDisplays = 5;
+            let connectionStartTime = Date.now();
 
-            // Add ping interval
-            setInterval(() => {
-                if (this.sock?.ws?.readyState === this.sock?.ws?.OPEN) {
-                    this.sock.sendRawMessage('?,,')
-                        .catch(err => console.warn('[BOT] Ping failed:', err.message));
-                }
-            }, 15000);
-
-            // Initialize message handler right after socket creation
-            this.messageHandler = new MessageHandler(this.sock);
-            console.log('[BOT] Message handler initialized');
-
-            // Handle QR code generation
             this.sock.ev.on('connection.update', async (update) => {
                 const { connection, lastDisconnect, qr } = update;
                 
-                if (qr && !qrDisplayed) {
-                    qrDisplayed = true;
+                // Handle QR code
+                if (qr) {
+                    qrDisplayCount++;
+                    if (qrDisplayCount > maxQrDisplays) {
+                        console.log('\n[BOT] QR code scan timeout. Restarting connection...');
+                        await this.sock.end();
+                        await clearAuthState();
+                        setTimeout(() => this.connect(), 3000);
+                        return;
+                    }
+
                     console.clear();
-                    console.log('\n[BOT] Please scan this QR code:');
+                    console.log('\n[BOT] Please scan this QR code within 40 seconds:');
+                    console.log(`[BOT] Attempt ${qrDisplayCount} of ${maxQrDisplays}`);
                     console.log('╭═══════════════════════════╮');
                     console.log('║    SCAN QR CODE BELOW     ║');
                     console.log('╰═══════════════════════════╯\n');
                     
                     qrcode.generate(qr, {
                         small: false,
-                        scale: 8,
-                        margin: 2
+                        scale: 8
                     });
-                    
-                    console.log('\nQR Code URL:');
-                    console.log(`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(qr)}\n`);
                 }
                 
                 if (connection === 'close') {
-                    console.log('[BOT] Connection closed. Clearing auth state...');
-                    qrDisplayed = false;
-                    // Always clear auth and restart for new QR
-                    await clearAuthState();
-                    console.log('[BOT] Auth state cleared. Starting new session...');
+                    const statusCode = lastDisconnect?.error?.output?.statusCode;
+                    console.log('[BOT] Connection closed. Status:', statusCode);
                     
-                    // Reset retry counter
-                    this.retryCount = 0;
-                    
-                    // Start new session
-                    setTimeout(() => this.connect(), 3000);
+                    // Only clear auth if logged out
+                    if (statusCode === DisconnectReason.loggedOut) {
+                        console.log('[BOT] Session logged out, clearing auth...');
+                        await clearAuthState();
+                        this.sock = null;
+                        setTimeout(() => this.connect(), 3000);
+                    } else {
+                        // Try to reconnect with existing auth
+                        console.log('[BOT] Reconnecting with saved session...');
+                        setTimeout(() => this.connect(), 3000);
+                    }
                     return;
-                } 
-                
+                }
+
                 if (connection === 'open') {
-                    qrDisplayed = false;
-                    console.log('[BOT] Connected successfully!');
+                    console.log('[BOT] Connected successfully with' + 
+                              (qr ? ' new' : ' saved') + ' session!');
+                    qrDisplayCount = 0;
                     this.messageHandler = new MessageHandler(this.sock);
-                    
                     // Send alive message
                     const botNumber = this.sock.user.id.split(':')[0];
                     await this.sock.sendMessage(`${botNumber}@s.whatsapp.net`, {
@@ -140,14 +121,22 @@ class WhatsAppBot {
                 }
             });
 
+            // Add connection timeout
+            setTimeout(async () => {
+                if (!this.sock?.user) {
+                    console.log('\n[BOT] Connection timeout. Restarting...');
+                    await this.sock?.end();
+                    await clearAuthState();
+                    this.connect();
+                }
+            }, 60000);
+
             // Add error event handler
             this.sock.ev.on('error', async (err) => {
                 console.error('[BOT] Connection error:', err);
-                if (err?.output?.statusCode === 515) {
-                    console.log('[BOT] Stream error detected, attempting recovery...');
-                    await this.sock.end();
-                    setTimeout(() => this.connect(), 5000);
-                }
+                await clearAuthState();
+                this.sock = null;
+                setTimeout(() => this.connect(), 3000);
             });
 
             this.sock.ev.on('messages.upsert', async ({ messages }) => {
@@ -188,20 +177,12 @@ class WhatsAppBot {
                 }
             });
 
+            // Make sure to save credentials
             this.sock.ev.on('creds.update', saveCreds);
         } catch (error) {
-            console.error('[BOT] Critical error:', error.message);
-            // Add specific error handling
-            if (error.message.includes('stream errored')) {
-                console.log('[BOT] Stream error caught, attempting restart...');
-                setTimeout(() => this.connect(), 5000);
-                return;
-            }
-            if (error.message.includes('WebCrypto')) {
-                console.error('[BOT] WebCrypto not available. Please check system configuration.');
-                process.exit(1);
-            }
-            throw error;
+            console.error('[BOT] Critical error:', error);
+            // Don't clear auth on general errors
+            setTimeout(() => this.connect(), 3000); 
         }
     }
 }

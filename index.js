@@ -15,15 +15,12 @@ let server;
 
 async function startBot() {
     try {
-        // Clear auth state on startup
-        console.log('[BOT] Clearing previous auth state...');
+        // Clear any existing sessions
         await clearAuthState();
-        console.log('[BOT] Auth state cleared. Ready for new connection.');
+        console.log('[BOT] Starting fresh session...');
         
-        // Add delay before starting bot
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        console.log('\n[BOT] Starting new session. Please wait for QR code...\n');
+        // Add longer initial delay
+        await new Promise(resolve => setTimeout(resolve, 3000));
         
         bot = new WhatsAppBot();
         await bot.connect();
@@ -49,7 +46,7 @@ async function startBot() {
         });
 
     } catch (error) {
-        console.error('[BOT] Failed to start bot:', error);
+        console.error('[BOT] Failed to start:', error);
         process.exit(1);
     }
 }
@@ -83,6 +80,13 @@ process.on('SIGTERM', async () => {
         console.error('Error during shutdown:', error);
         process.exit(1);
     }
+});
+
+// Add SIGINT handler
+process.on('SIGINT', async () => {
+    console.log('\n[BOT] Shutting down...');
+    await clearAuthState();
+    process.exit(0);
 });
 
 startBot().catch(console.error);
