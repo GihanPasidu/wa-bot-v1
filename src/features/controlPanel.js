@@ -2,10 +2,15 @@ class ControlPanel {
     constructor(sock) {
         this.sock = sock;
         this.config = {
-            autoRead: process.env.AUTO_READ_STATUS === 'true',
-            antiCall: process.env.ANTI_CALL === 'true'
+            autoRead: process.env.AUTO_READ_STATUS === 'true' || false,
+            antiCall: process.env.ANTI_CALL === 'true' || false
         };
-        console.log('[CONTROL] Control panel initialized with config:', this.config);
+
+        // Log initial config state
+        console.log('[CONTROL] Control panel initialized with config:', {
+            autoRead: this.config.autoRead,
+            antiCall: this.config.antiCall
+        });
     }
 
     updateSocket(sock) {
@@ -25,7 +30,7 @@ class ControlPanel {
                 break;
             case '.autoread':
                 this.config.autoRead = !this.config.autoRead;
-                response = `👁️ Auto read status has been ${this.config.autoRead ? 'enabled ✅' : 'disabled ❌'}`;
+                response = `👁️ Auto view status has been ${this.config.autoRead ? 'enabled ✅\nBot will now automatically view status updates' : 'disabled ❌\nBot will ignore status updates'}`;
                 break;
             case '.anticall':
                 this.config.antiCall = !this.config.antiCall;

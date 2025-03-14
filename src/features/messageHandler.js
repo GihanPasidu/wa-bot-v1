@@ -7,11 +7,54 @@ class MessageHandler {
         this.controlPanel = new ControlPanel(sock);
     }
 
+    updateSocket(sock) {
+        this.sock = sock;
+        this.controlPanel.updateSocket(sock);
+    }
+
     async handleMessage({ messages, sock }) {
         try {
             if (!messages || !messages[0]) return;
+            if (!sock && !this.sock) {
+                console.warn('[MSG] No socket available');
+                return;
+            }
+            
+            const currentSock = sock || this.sock;
             
             const msg = messages[0];
+            
+            // Enhanced status detection
+            const isStatus = msg.key?.remoteJid === 'status@broadcast';
+            const isStatusUpdate = isStatus && (
+                msg.message?.imageMessage ||
+                msg.message?.videoMessage ||
+                msg.message?.extendedTextMessage
+            );
+            
+            // Handle status messages if auto-read is enabled
+            if (isStatusUpdate && this.controlPanel.getConfig().autoRead) {
+                try {
+                    console.log('[STATUS] Auto-viewing status update:', {
+                        from: msg.key.participant || msg.key.remoteJid,
+                        type: Object.keys(msg.message)[0]
+                    });
+
+                    // Use readMessages for marking as read
+                    await currentSock.readMessages([msg.key]);
+                    
+                    // For statuses, no need to send separate read receipt
+                    // The readMessages call above is sufficient
+                    
+                    return;
+                } catch (err) {
+                    console.error('[STATUS] Failed to read status:', err);
+                    return;
+                }
+            }
+
+            // Skip further processing for status messages
+            if (isStatus) return;
             
             // Check if message is valid and has content
             if (!msg.message && !msg.messageStubType) {
@@ -50,7 +93,7 @@ class MessageHandler {
             // Handle control commands
             if (messageContent && this.controlPanel.isControlCommand(messageContent)) {
                 console.log('[CONTROL] Processing control command:', messageContent);
-                await this.controlPanel.handleControlCommand(messageContent, sender, sock);
+                await this.controlPanel.handleControlCommand(messageContent, sender, currentSock);
                 return;
             }
 

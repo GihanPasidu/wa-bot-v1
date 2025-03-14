@@ -29,6 +29,9 @@ class WhatsAppBot {
 
         try {
             const { state, saveCreds } = await getAuthState();
+            
+            // Initialize message handler before socket creation
+            this.messageHandler = new MessageHandler(null);
 
             // Check creds status
             if (Object.keys(state.creds).length === 0) {
@@ -59,6 +62,9 @@ class WhatsAppBot {
                 qrTimeout: 40000,
                 defaultQueryTimeoutMs: 30000
             });
+
+            // Update message handler with socket instance
+            this.messageHandler.updateSocket(this.sock);
 
             // Connection state tracking
             let isConnected = false;
@@ -117,19 +123,63 @@ class WhatsAppBot {
                     this.qrDisplayCount = 0;
                     this.qrShowing = false;
                     console.log('[BOT] Connected successfully');
-                    this.messageHandler = new MessageHandler(this.sock);
+                    // Remove message handler initialization from here
                 }
             });
 
-            // Handle messages
-            this.sock.ev.on('messages.upsert', async ({ messages }) => {
+            // Handle messages and status updates
+            this.sock.ev.on('messages.upsert', async ({ messages, type }) => {
                 try {
+                    if (!this.messageHandler) {
+                        console.warn('[BOT] Message handler not initialized');
+                        return;
+                    }
+                    // Handle both normal messages and status updates
                     for (const msg of messages) {
-                        if (msg.key.remoteJid === 'status@broadcast') continue;
-                        await this.messageHandler.handleMessage({ messages: [msg], sock: this.sock });
+                        await this.messageHandler.handleMessage({ 
+                            messages: [msg], 
+                            sock: this.sock,
+                            type 
+                        });
                     }
                 } catch (error) {
                     console.error('[BOT] Message handling error:', error);
+                }
+            });
+
+            // Add status message events
+            this.sock.ev.on('message-receipt.update', async (updates) => {
+                for (const update of updates) {
+                    if (update.key.remoteJid === 'status@broadcast') {
+                        try {
+                            console.log('[STATUS] Status view receipt received');
+                            // You can add additional status view handling here
+                        } catch (err) {
+                            console.error('[STATUS] Failed to handle status receipt:', err);
+                        }
+                    }
+                }
+            });
+
+            // Add status message events
+            this.sock.ev.on('message-receipt.update', async (updates) => {
+                for (const update of updates) {
+                    if (update.key.remoteJid === 'status@broadcast') {
+                        try {
+                            console.log('[STATUS] Status receipt received:', {
+                                from: update.key.participant,
+                                type: update.receipt?.type || 'unknown'
+                            });
+                        } catch (err) {
+                            console.error('[STATUS] Failed to handle status receipt:', err);
+                        }
+                    }
+                }
+            });
+
+            this.sock.ev.on('presence.update', ({ id, presences }) => {
+                if (id === 'status@broadcast') {
+                    console.log('[STATUS] Status presence update:', presences);
                 }
             });
 
