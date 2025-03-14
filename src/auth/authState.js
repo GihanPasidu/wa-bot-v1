@@ -2,8 +2,10 @@ const { useMultiFileAuthState } = require('@whiskeysockets/baileys');
 const fs = require('fs');
 const path = require('path');
 
-// Use path.resolve to get absolute path from project root
-const AUTH_FOLDER = path.resolve(__dirname, '../../auth_info');
+// Get auth folder path based on environment
+const AUTH_FOLDER = process.env.RENDER ? 
+    '/data/auth_info' : // Render persistent disk path
+    path.resolve(__dirname, '../../auth_info'); // Local development path
 
 async function getAuthState() {
     try {
@@ -13,17 +15,18 @@ async function getAuthState() {
             console.log('[AUTH] Created auth folder:', AUTH_FOLDER);
         }
 
-        // Check if existing auth data exists
+        // Check for existing auth data
         const files = fs.readdirSync(AUTH_FOLDER);
         if (files.length > 0) {
-            console.log('[AUTH] Found existing auth data');
+            console.log('[AUTH] Found existing auth data in:', AUTH_FOLDER);
         }
 
         return await useMultiFileAuthState(AUTH_FOLDER);
+
     } catch (error) {
         console.error('[AUTH] Error loading auth state:', error);
-        // Only clear on specific errors
-        if (error.message.includes('crypto')) {
+        if (!process.env.RENDER) {
+            // Only clear on local dev
             await clearAuthState();
         }
         return await useMultiFileAuthState(AUTH_FOLDER);

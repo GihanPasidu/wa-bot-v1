@@ -25,8 +25,8 @@ class WhatsAppBot {
         try {
             const { state, saveCreds } = await getAuthState();
 
-            // Check creds status without clearing
-            if (!Object.keys(state.creds).length) {
+            // Check creds status
+            if (Object.keys(state.creds).length === 0) {
                 console.log('[BOT] No credentials found, new QR code will be generated');
             } else {
                 console.log('[BOT] Found existing credentials, attempting to restore session');
@@ -62,14 +62,14 @@ class WhatsAppBot {
                 const { connection, lastDisconnect, qr } = update;
 
                 if (qr && !this.qrShowing) {
-                    // Don't clear auth on QR timeout, just retry
                     this.qrDisplayCount++;
                     this.qrShowing = true;
 
                     if (this.qrDisplayCount > this.maxQrDisplays) {
-                        console.log('\n[BOT] QR code scan timeout. Restarting...');
+                        console.log('\n[BOT] QR code scan timeout, retrying...');
                         this.qrShowing = false;
                         await this.sock.end();
+                        // Don't clear auth here, just retry
                         setTimeout(() => this.connect(), 3000);
                         return;
                     }
@@ -84,19 +84,20 @@ class WhatsAppBot {
                 }
 
                 if (connection === 'close') {
-                    isConnected = false;
-                    this.qrShowing = false;
                     const statusCode = lastDisconnect?.error?.output?.statusCode;
-
-                    // Only clear auth on explicit logout
+                    
+                    // Only clear auth on explicit logout from device
                     if (statusCode === DisconnectReason.loggedOut) {
-                        console.log('[BOT] Session logged out, clearing auth...');
+                        console.log('[BOT] Device logged out, clearing auth data...');
                         await clearAuthState();
                         this.sock = null;
+                        process.exit(0); // Exit cleanly after logout
+                    } else {
+                        // Just close connection without clearing auth
+                        console.log('[BOT] Connection closed, attempting reconnect...');
+                        this.isConnecting = false;
+                        setTimeout(() => this.connect(), 3000);
                     }
-                    
-                    this.isConnecting = false;
-                    setTimeout(() => this.connect(), 3000);
                     return;
                 }
 
@@ -139,6 +140,7 @@ class WhatsAppBot {
 
         } catch (error) {
             console.error('[BOT] Critical error:', error);
+            // Don't clear auth on general errors
             this.isConnecting = false;
             setTimeout(() => this.connect(), 3000);
         }

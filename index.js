@@ -83,7 +83,7 @@ process.on('SIGTERM', async () => {
 // Add SIGINT handler
 process.on('SIGINT', async () => {
     console.log('\n[BOT] Shutting down...');
-    await clearAuthState();
+    // Removed clearAuthState() call
     process.exit(0);
 });
 
