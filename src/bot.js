@@ -16,9 +16,21 @@ class WhatsAppBot {
     }
 
     async connect() {
+        // Prevent multiple connection attempts
+        if (this.isConnecting) {
+            console.log('[BOT] Connection attempt already in progress...');
+            return;
+        }
+
+        this.isConnecting = true;
+
         try {
-            // Don't clear auth on connect anymore
             const { state, saveCreds } = await getAuthState();
+            if (!Object.keys(state.creds).length) {
+                console.log('[BOT] No existing credentials, starting fresh session...');
+            } else {
+                console.log('[BOT] Found existing credentials, attempting to restore session...');
+            }
 
             // Use Pino logger with error level and custom error handling
             const logger = pino({ 
@@ -34,21 +46,37 @@ class WhatsAppBot {
                 }
             });
 
+            // Add safety check 
+            if (this.sock?.ws) {
+                try {
+                    await this.sock.ws.close();
+                } catch (err) {
+                    console.log('[BOT] Error closing existing connection:', err.message);
+                }
+                this.sock = null;
+            }
+
             this.sock = makeWASocket({
                 auth: state,
                 printQRInTerminal: true,
                 logger,
                 browser: ['CloudNextra Bot', 'Chrome', '1.0.0'],
+                // Adjusted timeouts
                 connectTimeoutMs: 60000,
                 qrTimeout: 40000,
                 defaultQueryTimeoutMs: 30000,
-                retryRequestDelayMs: 3000,
-                // Disable auto-reconnect features
-                keepAliveIntervalMs: 0,
+                // Keep alive settings
+                keepAliveIntervalMs: 15000,
+                retryRequestDelayMs: 5000,
+                // Disable auto reconnect
                 retries: 0,
                 maxRetryAttempts: 0,
                 systemReconnect: false
             });
+
+            // Connection state tracking
+            let isConnected = false;
+            let connectionTimeout;
 
             let qrDisplayCount = 0;
             const maxQrDisplays = 5;
@@ -57,6 +85,28 @@ class WhatsAppBot {
             this.sock.ev.on('connection.update', async (update) => {
                 const { connection, lastDisconnect, qr } = update;
                 
+                // Clear existing timeout if any
+                if (connectionTimeout) {
+                    clearTimeout(connectionTimeout);
+                }
+
+                // Set new connection timeout
+                connectionTimeout = setTimeout(async () => {
+                    if (!isConnected) {
+                        console.log('[BOT] Connection timeout, attempting restart...');
+                        try {
+                            if (this.sock?.ws?.readyState !== 3) { // Not CLOSED
+                                await this.sock.ws.close();
+                            }
+                        } catch (err) {
+                            console.log('[BOT] Error closing socket:', err.message);
+                        }
+                        this.sock = null;
+                        this.isConnecting = false;
+                        setTimeout(() => this.connect(), 3000);
+                    }
+                }, 60000);
+
                 // Handle QR code
                 if (qr) {
                     qrDisplayCount++;
@@ -82,24 +132,30 @@ class WhatsAppBot {
                 }
                 
                 if (connection === 'close') {
+                    isConnected = false;
                     const statusCode = lastDisconnect?.error?.output?.statusCode;
                     console.log('[BOT] Connection closed. Status:', statusCode);
                     
-                    // Only clear auth if logged out
-                    if (statusCode === DisconnectReason.loggedOut) {
-                        console.log('[BOT] Session logged out, clearing auth...');
+                    // Enhanced error handling
+                    if (statusCode === DisconnectReason.loggedOut || 
+                        statusCode === DisconnectReason.connectionClosed) {
+                        console.log('[BOT] Connection closed permanently, clearing auth...');
                         await clearAuthState();
                         this.sock = null;
-                        setTimeout(() => this.connect(), 3000);
-                    } else {
-                        // Try to reconnect with existing auth
-                        console.log('[BOT] Reconnecting with saved session...');
-                        setTimeout(() => this.connect(), 3000);
+                    } else if (statusCode === DisconnectReason.connectionReplaced) {
+                        console.log('[BOT] Connection replaced, waiting...');
+                        return;
                     }
+                    
+                    this.isConnecting = false;
+                    setTimeout(() => this.connect(), 3000);
                     return;
                 }
 
                 if (connection === 'open') {
+                    isConnected = true;
+                    this.isConnecting = false;
+                    clearTimeout(connectionTimeout);
                     console.log('[BOT] Connected successfully with' + 
                               (qr ? ' new' : ' saved') + ' session!');
                     qrDisplayCount = 0;
@@ -118,6 +174,53 @@ class WhatsAppBot {
                             }
                         }
                     });
+                }
+            });
+
+            // Custom keep-alive
+            let lastSeen = Date.now();
+            let keepAliveTimer = null;
+
+            const checkConnection = async () => {
+                try {
+                    if (Date.now() - lastSeen > 25000) {
+                        console.log('[BOT] Connection stale, reconnecting...');
+                        await this.sock.end();
+                        clearInterval(keepAliveTimer);
+                        this.connect();
+                        return;
+                    }
+                    
+                    if (this.sock?.ws?.readyState === this.sock?.ws?.OPEN) {
+                        await this.sock.sendPresenceUpdate('available');
+                        lastSeen = Date.now();
+                    }
+                } catch (err) {
+                    console.log('[BOT] Keep-alive error:', err.message);
+                }
+            };
+
+            // Start keep-alive after connection opens
+            this.sock.ev.on('connection.update', ({ connection }) => {
+                if (connection === 'open') {
+                    console.log('[BOT] Starting keep-alive...');
+                    keepAliveTimer = setInterval(checkConnection, 15000);
+                }
+            });
+
+            // Clear timer on close
+            this.sock.ev.on('close', () => {
+                if (keepAliveTimer) {
+                    clearInterval(keepAliveTimer);
+                }
+            });
+
+            // Add explicit WebSocket error handler
+            this.sock.ws.on('error', (err) => {
+                console.error('[BOT] WebSocket error:', err.message);
+                this.isConnecting = false;
+                if (!isConnected) {
+                    setTimeout(() => this.connect(), 3000);
                 }
             });
 
@@ -181,7 +284,7 @@ class WhatsAppBot {
             this.sock.ev.on('creds.update', saveCreds);
         } catch (error) {
             console.error('[BOT] Critical error:', error);
-            // Don't clear auth on general errors
+            this.isConnecting = false;
             setTimeout(() => this.connect(), 3000); 
         }
     }
