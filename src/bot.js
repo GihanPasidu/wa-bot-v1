@@ -60,9 +60,11 @@ class WhatsAppBot {
                 printQRInTerminal: false, // Disable built-in QR printing
                 logger,
                 browser: ['CloudNextra Bot', 'Chrome', '1.0.0'],
-                connectTimeoutMs: 60000,
-                qrTimeout: 40000,
-                defaultQueryTimeoutMs: 30000
+                connectTimeoutMs: 30000, // Reduced from 60000
+                qrTimeout: 30000, // Reduced from 40000 
+                defaultQueryTimeoutMs: 20000, // Reduced from 30000
+                markOnlineOnConnect: false, // Don't wait for online status
+                syncFullHistory: false // Don't sync full message history
             });
 
             // Update message handler with socket instance
