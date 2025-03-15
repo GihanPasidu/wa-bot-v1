@@ -106,7 +106,10 @@ async function startBot() {
 }
 
 async function shutdown(signal) {
-    if (isShuttingDown) return;
+    if (isShuttingDown) {
+        console.log('[BOT] Shutdown already in progress...');
+        return;
+    }
     isShuttingDown = true;
 
     console.log(`[BOT] ${signal} received. Starting graceful shutdown...`);
@@ -148,9 +151,9 @@ async function shutdown(signal) {
     }
 }
 
-// Update signal handlers
-process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT', () => shutdown('SIGINT'));
+// Update signal handlers to use once() instead of on()
+process.once('SIGTERM', () => shutdown('SIGTERM'));
+process.once('SIGINT', () => shutdown('SIGINT'));
 
 // Add container health check
 let pingInterval;
