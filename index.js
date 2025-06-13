@@ -4,17 +4,19 @@ if (!global.crypto) global.crypto = webcrypto;
 
 require('dotenv').config();
 const http = require('http');
-const fetch = require('node-fetch'); // Add this import
+const fetch = require('node-fetch');
 const WhatsAppBot = require('./src/bot');
 const { clearAuthState } = require('./src/auth/authState');
+const logger = require('./src/utils/logger');
 
 // Use Render assigned port or fallback to 10000
 const PORT = process.env.PORT || 10000;
 
 let bot;
 let server;
-let qrCode = null; // Store current QR code
+let qrCode = null;
 let isShuttingDown = false;
+let pingInterval;
 
 async function pingServer() {
     if (process.env.SELF_PING_URL) {
@@ -24,26 +26,26 @@ async function pingServer() {
                 headers: { 'User-Agent': 'WhatsApp-Bot/1.0' }
             });
             if (res.ok) {
-                console.log('[PING] Server pinged successfully:', res.status);
+                logger.ping('Server pinged successfully', { status: res.status });
             } else {
-                console.error('[PING] Server ping failed:', res.status);
+                logger.warning('Server ping failed', { status: res.status });
             }
         } catch (err) {
-            console.error('[PING] Failed to ping server:', err.message); 
+            logger.error('Failed to ping server', { error: err.message }); 
         }
     }
 }
 
 async function startBot() {
     try {
-        console.log('[BOT] Starting session...');
+        logger.starting('WhatsApp Bot');
         
         // Add longer initial delay
         await new Promise(resolve => setTimeout(resolve, 3000));
         
         bot = new WhatsAppBot();
         bot.setQRCallback((qr) => {
-            qrCode = qr; // Store QR code when generated
+            qrCode = qr;
         });
         await bot.connect();
         
@@ -53,7 +55,6 @@ async function startBot() {
                 res.writeHead(200);
                 res.end('OK');
             } else if (req.url === '/ping') {
-                // Add ping endpoint
                 res.writeHead(200);
                 res.end('PONG');
             } else if (req.url === '/qr') {
@@ -64,12 +65,23 @@ async function startBot() {
                             <head>
                                 <title>WhatsApp QR Code</title>
                                 <meta name="viewport" content="width=device-width, initial-scale=1">
+                                <style>
+                                    body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+                                    .container { text-align: center; color: white; padding: 20px; }
+                                    .qr-box { background: white; border-radius: 15px; padding: 30px; display: inline-block; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+                                    h2 { margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+                                    img { border-radius: 10px; }
+                                    p { margin-top: 15px; opacity: 0.9; }
+                                </style>
                             </head>
-                            <body style="display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#f0f0f0;">
-                                <div style="text-align:center;">
-                                    <h2>Scan QR Code to Connect</h2>
-                                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrCode)}">
-                                    <p>Please scan within 20 seconds</p>
+                            <body>
+                                <div class="container">
+                                    <h2>🤖 CloudNextra Bot - QR Code</h2>
+                                    <div class="qr-box">
+                                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrCode)}">
+                                    </div>
+                                    <p>📱 Scan with WhatsApp to connect</p>
+                                    <p>⏰ QR Code expires in 20 seconds</p>
                                 </div>
                             </body>
                         </html>
@@ -85,47 +97,48 @@ async function startBot() {
         });
 
         server.listen(PORT, () => {
-            console.log(`Health check server running on port ${PORT}`);
+            logger.connected('HTTP Server');
+            logger.info('Health check endpoint available', { port: PORT });
         });
 
         // Start ping interval after server starts
         if (process.env.SELF_PING_URL) {
-            console.log('[PING] Starting auto-ping service...');
-            setInterval(pingServer, 5 * 60 * 1000); // Ping every 5 minutes
+            logger.starting('Auto-ping service');
+            pingInterval = setInterval(pingServer, 5 * 60 * 1000);
         }
 
-        // Handle server errors
         server.on('error', (err) => {
-            console.error('HTTP server error:', err);
+            logger.error('HTTP server error', { error: err.message });
         });
 
     } catch (error) {
-        console.error('[BOT] Failed to start:', error);
+        logger.error('Failed to start bot', { error: error.message });
         process.exit(1);
     }
 }
 
 async function shutdown(signal) {
     if (isShuttingDown) {
-        console.log('[BOT] Shutdown already in progress...');
+        logger.warning('Shutdown already in progress...');
         return;
     }
     isShuttingDown = true;
 
-    console.log(`[BOT] ${signal} received. Starting graceful shutdown...`);
+    logger.warning(`${signal} received - Starting graceful shutdown`);
+    logger.separator();
     
     try {
         // Stop ping service first
         if (pingInterval) {
             clearInterval(pingInterval);
-            console.log('[PING] Auto-ping service stopped');
+            logger.info('Auto-ping service stopped');
         }
 
         // Close HTTP server
         if (server) {
             await new Promise((resolve) => {
                 server.close(() => {
-                    console.log('[BOT] HTTP server closed');
+                    logger.info('HTTP server closed');
                     resolve();
                 });
             });
@@ -137,56 +150,33 @@ async function shutdown(signal) {
         // Close WhatsApp connection
         if (bot && bot.sock) {
             await bot.sock.end();
-            console.log('[BOT] WhatsApp connection closed');
+            logger.disconnected('WhatsApp Bot');
         }
 
         // Final cleanup delay
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        console.log('[BOT] Shutdown completed');
+        logger.success('Shutdown completed successfully');
         process.exit(0);
     } catch (error) {
-        console.error('[BOT] Error during shutdown:', error);
+        logger.error('Error during shutdown', { error: error.message });
         process.exit(1);
     }
 }
 
-// Update signal handlers to use once() instead of on()
+// Signal handlers
 process.once('SIGTERM', () => shutdown('SIGTERM'));
 process.once('SIGINT', () => shutdown('SIGINT'));
 
-// Add container health check
-let pingInterval;
-async function startPingService() {
-    if (process.env.SELF_PING_URL) {
-        console.log('[PING] Starting auto-ping service...');
-        // Initial ping
-        await pingServer();
-        // Setup interval
-        pingInterval = setInterval(pingServer, 5 * 60 * 1000);
-    }
-}
-
-async function startServer() {
-    try {
-        // ...existing server code...
-
-        // Start ping service after server starts
-        await startPingService();
-
-    } catch (error) {
-        console.error('[SERVER] Failed to start:', error);
-        process.exit(1);
-    }
-}
-
-// Update startup
 async function start() {
     try {
-        await startServer();
+        // Show cool banner
+        logger.showBanner();
+        logger.showStartupInfo();
+        
         await startBot();
     } catch (error) {
-        console.error('[APP] Startup error:', error);
+        logger.error('Startup error', { error: error.message });
         process.exit(1);
     }
 }

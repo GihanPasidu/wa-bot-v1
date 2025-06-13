@@ -1,5 +1,6 @@
 const ControlPanel = require('./controlPanel');
 const { createSticker } = require('./stickerHandler');
+const logger = require('../utils/logger');
 
 class MessageHandler {
     constructor(sock) {
@@ -43,7 +44,7 @@ class MessageHandler {
             }
 
         } catch (error) {
-            console.error('[MSG] Error handling message:', error);
+            logger.error('Error handling message', { error: error.message });
         }
     }
 
@@ -67,7 +68,7 @@ class MessageHandler {
 
         // Skip if already processed
         if (this.processedMessages.has(messageId)) return;
-        this.processedMessages.add(messageId); // Fixed missing parenthesis
+        this.processedMessages.add(messageId);
 
         const currentTime = Date.now();
 
@@ -90,20 +91,15 @@ class MessageHandler {
         // Handle status messages if auto-read is enabled
         if (isStatusUpdate && this.controlPanel.getConfig().autoRead) {
             try {
-                console.log('[STATUS] Auto-viewing status update:', {
+                logger.status('Auto-viewing status update', {
                     from: msg.key.participant || msg.key.remoteJid,
                     type: Object.keys(msg.message)[0]
                 });
 
-                // Use readMessages for marking as read
                 await currentSock.readMessages([msg.key]);
-                
-                // For statuses, no need to send separate read receipt
-                // The readMessages call above is sufficient
-                
                 return;
             } catch (err) {
-                console.error('[STATUS] Failed to read status:', err);
+                logger.error('Failed to read status', { error: err.message });
                 return;
             }
         }
@@ -113,14 +109,22 @@ class MessageHandler {
         
         // Check if message is valid and has content
         if (!msg.message && !msg.messageStubType) {
-            return; // Ignore empty or invalid messages
+            return;
         }
 
         const messageContent = msg.message?.conversation || 
                              msg.message?.extendedTextMessage?.text ||
                              msg.message?.imageMessage?.caption || '';
 
-        console.log('[MSG] New message from', sender);
+        // Check if this is a group or private chat
+        const isGroupChat = sender.endsWith('@g.us');
+        const isPrivateChat = sender.endsWith('@s.whatsapp.net');
+
+        logger.message('New message received', {
+            from: sender.split('@')[0],
+            type: isGroupChat ? 'Group' : 'Private',
+            content: messageContent ? messageContent.substring(0, 50) + '...' : 'No text'
+        });
 
         // Group message handling with error recovery
         if (sender.endsWith('@g.us')) {
@@ -215,6 +219,27 @@ class MessageHandler {
                 this.replyHistory.delete(sender);
             }
         }
+    }
+
+    // Add safe message sending with retry logic
+    async safeSendMessage(sock, jid, message, retries = 2) {
+        for (let i = 0; i <= retries; i++) {
+            try {
+                await sock.sendMessage(jid, message);
+                return true;
+            } catch (error) {
+                logger.error(`Send attempt ${i + 1} failed`, { error: error.message });
+                
+                if (i === retries) {
+                    logger.error('Max retries reached, message send failed');
+                    return false;
+                }
+                
+                // Wait before retry
+                await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+            }
+        }
+        return false;
     }
 }
 

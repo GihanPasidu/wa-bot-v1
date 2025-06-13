@@ -3,6 +3,7 @@ const { getAuthState, clearAuthState } = require('./auth/authState');
 const MessageHandler = require('./features/messageHandler');
 const qrcode = require('qrcode-terminal');
 const pino = require('pino');
+const logger = require('./utils/logger');
 
 class WhatsAppBot {
     constructor() {
@@ -21,7 +22,7 @@ class WhatsAppBot {
 
     async connect() {
         if (this.isConnecting) {
-            console.log('[BOT] Connection attempt already in progress');
+            logger.warning('Connection attempt already in progress');
             return;
         }
 
@@ -37,17 +38,17 @@ class WhatsAppBot {
 
             // Check creds status
             if (Object.keys(state.creds).length === 0) {
-                console.log('[BOT] No credentials found, new QR code will be generated');
+                logger.auth('No credentials found - QR code will be generated');
             } else {
-                console.log('[BOT] Found existing credentials, attempting to restore session');
+                logger.auth('Found existing credentials - attempting session restore');
             }
 
-            const logger = pino({ 
+            const logger_pino = pino({ 
                 level: 'error',
                 hooks: {
                     logMethod(inputArgs, method) {
                         if (inputArgs[0].err && inputArgs[0].err.message.includes('importKey')) {
-                            console.error('[BOT] Crypto error detected, attempting recovery...');
+                            logger.error('Crypto error detected - attempting recovery');
                             this.clearAuthState();
                         }
                         return method.apply(this, inputArgs);
@@ -57,14 +58,14 @@ class WhatsAppBot {
 
             this.sock = makeWASocket({
                 auth: state,
-                printQRInTerminal: false, // Disable built-in QR printing
-                logger,
+                printQRInTerminal: false,
+                logger: logger_pino,
                 browser: ['CloudNextra Bot', 'Chrome', '1.0.0'],
-                connectTimeoutMs: 30000, // Reduced from 60000
-                qrTimeout: 30000, // Reduced from 40000 
-                defaultQueryTimeoutMs: 20000, // Reduced from 30000
-                markOnlineOnConnect: false, // Don't wait for online status
-                syncFullHistory: false // Don't sync full message history
+                connectTimeoutMs: 30000,
+                qrTimeout: 30000, 
+                defaultQueryTimeoutMs: 20000,
+                markOnlineOnConnect: false,
+                syncFullHistory: false
             });
 
             // Update message handler with socket instance
@@ -81,10 +82,9 @@ class WhatsAppBot {
                     this.qrShowing = true;
 
                     if (this.qrDisplayCount > this.maxQrDisplays) {
-                        console.log('\n[BOT] QR code scan timeout, retrying...');
+                        logger.warning('QR code scan timeout - retrying connection');
                         this.qrShowing = false;
                         await this.sock.end();
-                        // Don't clear auth here, just retry
                         setTimeout(() => this.connect(), 3000);
                         return;
                     }
@@ -94,9 +94,12 @@ class WhatsAppBot {
                         this.qrCallback(qr);
                     }
 
-                    console.log('\n[BOT] Please scan this QR code:');
-                    console.log(`[BOT] Or visit: ${process.env.RENDER_EXTERNAL_URL}/qr`);
+                    logger.qrGenerated();
+                    logger.info('Scan QR code above or visit web interface', { 
+                        url: process.env.RENDER_EXTERNAL_URL + '/qr' 
+                    });
                     qrcode.generate(qr, {small: true});
+                    logger.separator();
                 }
 
                 // Reset QR flag when connection changes
@@ -108,18 +111,20 @@ class WhatsAppBot {
                     const statusCode = lastDisconnect?.error?.output?.statusCode;
                     
                     if (statusCode === DisconnectReason.loggedOut) {
-                        console.log('[BOT] Device logged out, clearing auth data...');
+                        logger.warning('Device logged out - clearing auth data');
                         await clearAuthState();
                         this.sock = null;
-                        process.exit(0); // Exit cleanly after logout
+                        process.exit(0);
                     } else {
                         if (!this.isShuttingDown) {
                             retryCount++;
                             if (retryCount > maxRetries) {
-                                console.error('[BOT] Max retries exceeded, exiting...');
+                                logger.error('Max retries exceeded - exiting');
                                 process.exit(1);
                             }
-                            console.log(`[BOT] Connection attempt ${retryCount}/${maxRetries}`);
+                            logger.warning(`Connection attempt ${retryCount}/${maxRetries}`, { 
+                                reason: lastDisconnect?.error?.message 
+                            });
                             setTimeout(() => this.connect(), 3000);
                         }
                     }
@@ -130,7 +135,9 @@ class WhatsAppBot {
                     isConnected = true;
                     this.qrDisplayCount = 0;
                     this.qrShowing = false;
-                    console.log('[BOT] Connected successfully');
+                    logger.connected('WhatsApp Bot');
+                    logger.success('Ready to receive messages and commands');
+                    logger.separator();
                 }
             });
 
@@ -138,10 +145,9 @@ class WhatsAppBot {
             this.sock.ev.on('messages.upsert', async ({ messages, type }) => {
                 try {
                     if (!this.messageHandler) {
-                        console.warn('[BOT] Message handler not initialized');
+                        logger.warning('Message handler not initialized');
                         return;
                     }
-                    // Handle both normal messages and status updates
                     for (const msg of messages) {
                         await this.messageHandler.handleMessage({ 
                             messages: [msg], 
@@ -150,7 +156,7 @@ class WhatsAppBot {
                         });
                     }
                 } catch (error) {
-                    console.error('[BOT] Message handling error:', error);
+                    logger.error('Message handling error', { error: error.message });
                 }
             });
 
@@ -159,34 +165,13 @@ class WhatsAppBot {
                 for (const update of updates) {
                     if (update.key.remoteJid === 'status@broadcast') {
                         try {
-                            console.log('[STATUS] Status view receipt received');
-                            // You can add additional status view handling here
-                        } catch (err) {
-                            console.error('[STATUS] Failed to handle status receipt:', err);
-                        }
-                    }
-                }
-            });
-
-            // Add status message events
-            this.sock.ev.on('message-receipt.update', async (updates) => {
-                for (const update of updates) {
-                    if (update.key.remoteJid === 'status@broadcast') {
-                        try {
-                            console.log('[STATUS] Status receipt received:', {
-                                from: update.key.participant,
-                                type: update.receipt?.type || 'unknown'
+                            logger.status('Status view receipt received', {
+                                from: update.key.participant
                             });
                         } catch (err) {
-                            console.error('[STATUS] Failed to handle status receipt:', err);
+                            logger.error('Failed to handle status receipt', { error: err.message });
                         }
                     }
-                }
-            });
-
-            this.sock.ev.on('presence.update', ({ id, presences }) => {
-                if (id === 'status@broadcast') {
-                    console.log('[STATUS] Status presence update:', presences);
                 }
             });
 
@@ -199,6 +184,7 @@ class WhatsAppBot {
                             await this.sock.sendMessage(call.from, { 
                                 text: '❌ Sorry, calls are not allowed.' 
                             });
+                            logger.info('Call blocked and rejected', { from: call.from });
                         }
                     }
                 }
@@ -207,12 +193,12 @@ class WhatsAppBot {
             this.sock.ev.on('creds.update', saveCreds);
 
         } catch (error) {
-            console.error('[BOT] Critical connection error:', error);
+            logger.error('Critical connection error', { error: error.message });
             if (retryCount < maxRetries) {
                 retryCount++;
                 setTimeout(() => this.connect(), 3000);
             } else {
-                process.exit(1); // Let container restart
+                process.exit(1);
             }
         } finally {
             this.isConnecting = false;

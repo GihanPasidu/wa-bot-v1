@@ -1,6 +1,7 @@
 const { useMultiFileAuthState } = require('@whiskeysockets/baileys');
 const fs = require('fs');
 const path = require('path');
+const logger = require('../utils/logger');
 
 // Get auth folder path based on environment
 const AUTH_FOLDER = process.env.RENDER ? 
@@ -12,19 +13,22 @@ async function getAuthState() {
         // Create auth folder if it doesn't exist
         if (!fs.existsSync(AUTH_FOLDER)) {
             fs.mkdirSync(AUTH_FOLDER, { recursive: true });
-            console.log('[AUTH] Created auth folder:', AUTH_FOLDER);
+            logger.auth('Created auth folder', { path: AUTH_FOLDER });
         }
 
         // Check for existing auth data
         const files = fs.readdirSync(AUTH_FOLDER);
         if (files.length > 0) {
-            console.log('[AUTH] Found existing auth data in:', AUTH_FOLDER);
+            logger.auth('Found existing auth data', { 
+                path: AUTH_FOLDER,
+                files: files.length
+            });
         }
 
         return await useMultiFileAuthState(AUTH_FOLDER);
 
     } catch (error) {
-        console.error('[AUTH] Error loading auth state:', error);
+        logger.error('Error loading auth state', { error: error.message });
         if (!process.env.RENDER) {
             // Only clear on local dev
             await clearAuthState();
@@ -40,11 +44,11 @@ async function clearAuthState() {
             for (const file of files) {
                 fs.unlinkSync(path.join(AUTH_FOLDER, file));
             }
-            console.log('[AUTH] Auth files cleared');
+            logger.auth('Auth files cleared');
             return true;
         }
     } catch (error) {
-        console.error('[AUTH] Error clearing auth state:', error); 
+        logger.error('Error clearing auth state', { error: error.message }); 
     }
     return false;
 }
