@@ -9,8 +9,11 @@ class ControlPanel {
         this.config = {
             autoRead: false,
             antiCall: false,
-            autoReply: false
+            autoReply: true // Enable auto-reply by default
         };
+
+        // Enable auto-reply system by default
+        this.autoReply.enable();
 
         // Log initial config state
         console.log('[CONTROL] Control panel initialized with config:', {
@@ -56,19 +59,6 @@ class ControlPanel {
         this.sock = sock;
     }
 
-    async handlePanelCommand(sender) {
-        if (!this._cachedMenu) {
-            this._cachedMenu = this.generatePanelMenu();
-        }
-
-        const messageConfig = {
-            text: this._cachedMenu,
-            ...(this._cachedConfig || {})
-        };
-
-        return this.sock.sendMessage(sender, messageConfig);
-    }
-
     async handleControlCommand(msg, sender, sock) {
         this.sock = sock || this.sock;
         const command = msg.toLowerCase().split(' ')[0];
@@ -79,7 +69,16 @@ class ControlPanel {
             return this.handlePanelCommand(sender);
         }
 
-        // Remove console log to reduce delay
+        // Handle help command
+        if (command === '.help') {
+            const helpText = this.getHelpMenu();
+            const messageConfig = {
+                text: helpText,
+                ...(this._cachedConfig || {})
+            };
+            return this.safeSendMessage(sender, messageConfig);
+        }
+
         let response = '';
 
         // Use Map for faster command lookup
@@ -100,24 +99,25 @@ class ControlPanel {
         } else {
             switch(command) {
                 case '.sticker':
-                    response = `🖼️ *Sticker Command*\n\n` +
-                                `📝 To create a sticker:\n` +
-                                `1️⃣ Send an image\n` +
-                                `2️⃣ Add caption .s\n\n` +
-                                `✨ The bot will convert your image to a sticker!`;
+                    response = `🖼️ *Sticker Command Help*\n\n` +
+                                `📝 How to create stickers:\n` +
+                                `1️⃣ Send an image with caption \`.s\`\n` +
+                                `2️⃣ Reply to any image with \`.s\`\n` +
+                                `3️⃣ Send an image, then send \`.s\`\n\n` +
+                                `✨ Supported formats: JPEG, PNG, GIF\n` +
+                                `📏 Images will be resized to fit WhatsApp sticker requirements`;
                     break;
                 case '.autoreply':
                     this.config.autoReply = !this.config.autoReply;
                     if (this.config.autoReply) {
                         this.autoReply.enable();
-                        response = '✅ Auto-reply has been enabled';
+                        response = '✅ Auto-reply has been enabled (Private chats only)';
                     } else {
                         this.autoReply.disable();
                         response = '❌ Auto-reply has been disabled';
                     }
                     break;
                 case '.addreply': {
-                    // Fix: Better parsing for trigger and response
                     const parts = args.split('-'); 
                     if (parts.length !== 2) {
                         response = '❌ Invalid format. Use: .addreply trigger - response';
@@ -159,32 +159,43 @@ class ControlPanel {
         }
 
         if (response) {
-            // Send response immediately
-            await this.sock.sendMessage(sender, { text: response }).catch(console.error);
+            // Use safe send message with retry
+            await this.safeSendMessage(sender, { text: response });
         }
     }
 
-    generatePanelMenu() {
-        const sections = [
-            '╭━━━ *🤖 CLOUDNEXTRA BOT* ━━━┄⃟ ',
-            '│',
-            '│ 📊 *System Status*',
-            `│ ${this.getStatusEmoji('autoRead')} 👁️ Auto Status View`,
-            `│ ${this.getStatusEmoji('antiCall')} 📵 Anti Call Protection`, 
-            `│ ${this.getStatusEmoji('autoReply')} 💬 Auto Reply`,
-            '│',
-            '│ ⌨️ *Quick Commands*',
-            '│ • 📋 .panel  - Show this menu',
-            '│ • 👁️ .autoread - Toggle status viewing',
-            '│ • 📵 .anticall - Toggle call blocking', 
-            '│ • 💬 .autoreply - Toggle auto-reply',
-            '│ • 🖼️ .s     - Create sticker',
-            '│ • ❔ .help   - Show detailed help',
-            '│',
-            '╰━━━━━━━━━━━━━━━┄⃟ '
-        ].join('\n');
+    async handlePanelCommand(sender) {
+        if (!this._cachedMenu) {
+            this._cachedMenu = this.generatePanelMenu();
+        }
 
-        return sections;
+        const messageConfig = {
+            text: this._cachedMenu,
+            ...(this._cachedConfig || {})
+        };
+
+        return this.safeSendMessage(sender, messageConfig);
+    }
+
+    // Add safe message sending method
+    async safeSendMessage(jid, message, retries = 2) {
+        for (let i = 0; i <= retries; i++) {
+            try {
+                await this.sock.sendMessage(jid, message);
+                return true;
+            } catch (error) {
+                console.error(`[CONTROL] Send attempt ${i + 1} failed:`, error.message);
+                
+                if (i === retries) {
+                    console.error('[CONTROL] Max retries reached, message send failed');
+                    return false;
+                }
+                
+                // Wait before retry
+                await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+            }
+        }
+        return false;
     }
 
     getHelpMenu() {
@@ -198,7 +209,7 @@ class ControlPanel {
             '▫️ .autoread - Toggle status viewing',
             '▫️ .anticall - Toggle call blocking',
             '',
-            '*🔄 Auto-Reply:*',
+            '*🔄 Auto-Reply (Private Chats Only):*',
             '▫️ .autoreply - Toggle auto-reply system',
             '▫️ .addreply trigger - response',
             '▫️ .delreply trigger',
@@ -219,6 +230,29 @@ class ControlPanel {
         return sections;
     }
 
+    generatePanelMenu() {
+        const sections = [
+            '╭━━━ *🤖 CLOUDNEXTRA BOT* ━━━┄⃟ ',
+            '│',
+            '│ 📊 *System Status*',
+            `│ ${this.getStatusEmoji('autoRead')} 👁️ Auto Status View`,
+            `│ ${this.getStatusEmoji('antiCall')} 📵 Anti Call Protection`, 
+            `│ ${this.getStatusEmoji('autoReply')} 💬 Auto Reply (Private Only)`,
+            '│',
+            '│ ⌨️ *Quick Commands*',
+            '│ • 📋 .panel  - Show this menu',
+            '│ • 👁️ .autoread - Toggle status viewing',
+            '│ • 📵 .anticall - Toggle call blocking', 
+            '│ • 💬 .autoreply - Toggle auto-reply (private chats)',
+            '│ • 🖼️ .s     - Create sticker',
+            '│ • ❔ .help   - Show detailed help',
+            '│',
+            '╰━━━━━━━━━━━━━━━┄⃟ '
+        ].join('\n');
+
+        return sections;
+    }
+
     getStatusEmoji(feature) {
         return this.config[feature] ? '✅' : '❌';
     }
@@ -227,11 +261,13 @@ class ControlPanel {
         const commands = [
             '.panel', '.help',
             '.autoread', '.anticall',
-            '.sticker', '.s',
+            '.sticker', // Keep .sticker as control command
             '.autoreply', '.addreply', '.delreply',
             '.listreplies', '.clearreplies'
         ];
-        return commands.some(cmd => msg.toLowerCase() === cmd);
+        const command = msg.toLowerCase().split(' ')[0];
+        // Don't treat .s as control command to allow sticker processing
+        return commands.includes(command);
     }
 
     getConfig() {

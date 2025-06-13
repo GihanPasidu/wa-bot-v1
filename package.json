@@ -1,16 +1,25 @@
 {
   "name": "cloudnextra-whatsapp-bot",
   "version": "1.0.0",
-  "description": "WhatsApp bot for Render deployment",
+  "description": "CloudNextra WhatsApp Bot with auto-reply and sticker functionality",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "build": "npm install --platform=linux --arch=x64 sharp",
-    "test": "echo \"No tests specified\" && exit 0"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": [
+    "whatsapp",
+    "bot",
+    "automation",
+    "sticker",
+    "auto-reply"
+  ],
+  "author": "CloudNextra Solutions",
+  "license": "MIT",
   "dependencies": {
     "@whiskeysockets/baileys": "^6.4.0",
+    "chalk": "^4.1.2",
     "dotenv": "^16.3.1",
     "node-fetch": "^2.7.0",
     "pino": "^8.15.0",
@@ -22,5 +31,9 @@
   },
   "engines": {
     "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/whatsapp-bot.git"
   }
 }
