@@ -8,6 +8,10 @@ const AUTH_FOLDER = process.env.RENDER ?
     '/data/auth_info' : // Render persistent disk path
     path.resolve(__dirname, '../../auth_info'); // Local development path
 
+// Track connection attempts with existing credentials
+let connectionAttempts = 0;
+const MAX_CONNECTION_ATTEMPTS = 3;
+
 async function getAuthState() {
     try {
         // Create auth folder if it doesn't exist
@@ -18,11 +22,25 @@ async function getAuthState() {
 
         // Check for existing auth data
         const files = fs.readdirSync(AUTH_FOLDER);
-        if (files.length > 0) {
-            logger.auth('Found existing auth data', { 
+        const hasExistingAuth = files.length > 0 && files.some(f => f.includes('creds.json'));
+        
+        if (hasExistingAuth) {
+            connectionAttempts++;
+            logger.auth(`Found existing credentials - attempt ${connectionAttempts}/${MAX_CONNECTION_ATTEMPTS}`, { 
                 path: AUTH_FOLDER,
                 files: files.length
             });
+
+            // If we've tried too many times with existing auth, clear it
+            if (connectionAttempts > MAX_CONNECTION_ATTEMPTS) {
+                logger.warning(`Failed to connect after ${MAX_CONNECTION_ATTEMPTS} attempts - clearing auth for fresh start`);
+                await clearAuthState();
+                connectionAttempts = 0; // Reset counter
+                logger.auth('Auth state cleared - will generate new QR code');
+            }
+        } else {
+            logger.auth('No existing credentials found - will generate QR code');
+            connectionAttempts = 0; // Reset counter for fresh start
         }
 
         return await useMultiFileAuthState(AUTH_FOLDER);
@@ -32,6 +50,7 @@ async function getAuthState() {
         // Clear auth state on any critical error
         logger.warning('Clearing corrupted auth state');
         await clearAuthState();
+        connectionAttempts = 0; // Reset counter
         return await useMultiFileAuthState(AUTH_FOLDER);
     }
 }
@@ -44,12 +63,23 @@ async function clearAuthState() {
                 fs.unlinkSync(path.join(AUTH_FOLDER, file));
             }
             logger.auth('Auth files cleared');
+            connectionAttempts = 0; // Reset connection attempts counter
             return true;
         }
     } catch (error) {
         logger.error('Error clearing auth state', { error: error.message }); 
     }
     return false;
+}
+
+// Function to reset connection attempts (useful for successful connections)
+function resetConnectionAttempts() {
+    connectionAttempts = 0;
+}
+
+// Function to get current connection attempts count
+function getConnectionAttempts() {
+    return connectionAttempts;
 }
 
 // Add function to check auth state
@@ -65,4 +95,4 @@ function hasValidSession() {
     }
 }
 
-module.exports = { getAuthState, clearAuthState, hasValidSession };
+module.exports = { getAuthState, clearAuthState, hasValidSession, resetConnectionAttempts, getConnectionAttempts };

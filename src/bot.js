@@ -1,5 +1,5 @@
 const { default: makeWASocket, DisconnectReason, useMultiFileAuthState } = require('@whiskeysockets/baileys');
-const { getAuthState, clearAuthState } = require('./auth/authState');
+const { getAuthState, clearAuthState, resetConnectionAttempts } = require('./auth/authState');
 const MessageHandler = require('./features/messageHandler');
 const qrcode = require('qrcode-terminal');
 const pino = require('pino');
@@ -14,8 +14,6 @@ class WhatsAppBot {
         this.maxQrDisplays = 5;
         this.qrShowing = false;
         this.qrCallback = null;
-        this.connectionAttempts = 0;
-        this.lastConnectionAttempt = 0;
     }
 
     setQRCallback(callback) {
@@ -28,25 +26,9 @@ class WhatsAppBot {
             return;
         }
 
-        // Track connection attempts to detect infinite loops
-        const now = Date.now();
-        if (now - this.lastConnectionAttempt < 60000) { // Less than 1 minute since last attempt
-            this.connectionAttempts++;
-        } else {
-            this.connectionAttempts = 1;
-        }
-        this.lastConnectionAttempt = now;
-
-        // If too many attempts in short time, clear auth state
-        if (this.connectionAttempts > 10) {
-            logger.warning('Too many connection attempts - clearing auth state to break loop');
-            await clearAuthState();
-            this.connectionAttempts = 0;
-        }
-
         this.isConnecting = true;
         let retryCount = 0;
-        const maxRetries = 3;
+        const maxRetries = 2; // Reduced since auth module handles the main retry logic
 
         try {
             const { state, saveCreds } = await getAuthState();
@@ -155,10 +137,9 @@ class WhatsAppBot {
                               statusCode === DisconnectReason.connectionLost ||
                               statusCode === DisconnectReason.restartRequired) {
                         // Clear auth for critical errors that indicate bad session
-                        logger.warning('Critical session error - clearing auth state', { 
+                        logger.warning('Critical session error - will retry with fresh auth', { 
                             statusCode: statusCode 
                         });
-                        await clearAuthState();
                         this.sock = null;
                         setTimeout(() => this.connect(), 3000);
                         return;
@@ -166,10 +147,9 @@ class WhatsAppBot {
                         if (!this.isShuttingDown) {
                             retryCount++;
                             if (retryCount > maxRetries) {
-                                logger.error('Max retries exceeded - clearing auth and restarting');
-                                await clearAuthState();
+                                logger.warning('Max connection retries exceeded - will restart with auth check');
                                 setTimeout(() => this.connect(), 5000);
-                                retryCount = 0; // Reset retry count after clearing auth
+                                retryCount = 0; // Reset retry count
                                 return;
                             }
                             logger.warning(`Connection attempt ${retryCount}/${maxRetries}`, { 
@@ -185,6 +165,7 @@ class WhatsAppBot {
                     isConnected = true;
                     this.qrDisplayCount = 0;
                     this.qrShowing = false;
+                    resetConnectionAttempts(); // Reset auth connection attempts on success
                     logger.connected('WhatsApp Bot');
                     logger.success('Ready to receive messages and commands');
                     logger.separator();

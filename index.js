@@ -6,7 +6,7 @@ require('dotenv').config();
 const http = require('http');
 const fetch = require('node-fetch');
 const WhatsAppBot = require('./src/bot');
-const { clearAuthState } = require('./src/auth/authState');
+const { clearAuthState, resetConnectionAttempts, getConnectionAttempts } = require('./src/auth/authState');
 const logger = require('./src/utils/logger');
 
 // Use Render assigned port or fallback to 10000
@@ -93,9 +93,24 @@ async function startBot() {
             } else if (req.url === '/clear-auth') {
                 try {
                     await clearAuthState();
+                    resetConnectionAttempts(); // Also reset the attempt counter
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: true, message: 'Auth state cleared successfully' }));
                     logger.info('Auth state cleared via web endpoint');
+                } catch (error) {
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: error.message }));
+                }
+            } else if (req.url === '/status') {
+                try {
+                    const status = {
+                        bot_status: bot && bot.sock ? 'connected' : 'disconnected',
+                        qr_available: !!qrCode,
+                        connection_attempts: getConnectionAttempts(),
+                        uptime: process.uptime()
+                    };
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(status, null, 2));
                 } catch (error) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, error: error.message }));

@@ -28,9 +28,18 @@ A feature-rich WhatsApp bot built with Baileys, designed for seamless deployment
 7. If bot gets stuck in connection loop, visit `/clear-auth` endpoint to reset
 
 ## Troubleshooting
-- **Connection Loop**: Visit `https://your-app.onrender.com/clear-auth` to clear auth state
+- **Connection Loop**: Bot tries existing auth 3 times, then auto-generates new QR code
+- **Manual Reset**: Visit `https://your-app.onrender.com/clear-auth` to force clear auth state
 - **QR Code**: Visit `https://your-app.onrender.com/qr` to see QR code in browser
+- **Bot Status**: Visit `https://your-app.onrender.com/status` to check connection status
 - **No QR Code**: Check logs for errors, may need to clear auth state first
+
+## Available Endpoints
+- `/health` - Health check for Render
+- `/ping` - Ping endpoint  
+- `/qr` - View QR code in browser
+- `/clear-auth` - Manually clear authentication state
+- `/status` - Check bot status and connection attempts
 
 ## Bot Commands
 - `.panel` - Show control panel menu
