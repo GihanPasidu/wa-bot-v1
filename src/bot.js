@@ -14,6 +14,8 @@ class WhatsAppBot {
         this.maxQrDisplays = 5;
         this.qrShowing = false;
         this.qrCallback = null;
+        this.connectionAttempts = 0;
+        this.lastConnectionAttempt = 0;
     }
 
     setQRCallback(callback) {
@@ -24,6 +26,22 @@ class WhatsAppBot {
         if (this.isConnecting) {
             logger.warning('Connection attempt already in progress');
             return;
+        }
+
+        // Track connection attempts to detect infinite loops
+        const now = Date.now();
+        if (now - this.lastConnectionAttempt < 60000) { // Less than 1 minute since last attempt
+            this.connectionAttempts++;
+        } else {
+            this.connectionAttempts = 1;
+        }
+        this.lastConnectionAttempt = now;
+
+        // If too many attempts in short time, clear auth state
+        if (this.connectionAttempts > 10) {
+            logger.warning('Too many connection attempts - clearing auth state to break loop');
+            await clearAuthState();
+            this.connectionAttempts = 0;
         }
 
         this.isConnecting = true;
@@ -47,9 +65,22 @@ class WhatsAppBot {
                 level: 'error',
                 hooks: {
                     logMethod(inputArgs, method) {
-                        if (inputArgs[0].err && inputArgs[0].err.message.includes('importKey')) {
-                            logger.error('Crypto error detected - attempting recovery');
-                            this.clearAuthState();
+                        // Log additional context for specific errors
+                        if (inputArgs[0] && inputArgs[0].err) {
+                            const error = inputArgs[0].err;
+                            if (error.message && error.message.includes('importKey')) {
+                                logger.error('Crypto importKey error - clearing auth state');
+                                clearAuthState().catch(console.error);
+                            } else if (error.message && error.message.includes('ENOTFOUND')) {
+                                logger.error('DNS resolution error - network connectivity issue');
+                            } else if (error.message && error.message.includes('ECONNRESET')) {
+                                logger.error('Connection reset - WhatsApp server connection lost');
+                            }
+                            logger.error('WhatsApp connection error details', { 
+                                error: error.message,
+                                code: error.code,
+                                stack: error.stack?.split('\n')[0]
+                            });
                         }
                         return method.apply(this, inputArgs);
                     }
@@ -61,11 +92,15 @@ class WhatsAppBot {
                 printQRInTerminal: false,
                 logger: logger_pino,
                 browser: ['CloudNextra Bot', 'Chrome', '1.0.0'],
-                connectTimeoutMs: 30000,
-                qrTimeout: 30000, 
-                defaultQueryTimeoutMs: 20000,
+                connectTimeoutMs: 60000, // Increased to 60 seconds
+                qrTimeout: 45000, // Increased QR timeout
+                defaultQueryTimeoutMs: 30000, // Increased query timeout
                 markOnlineOnConnect: false,
-                syncFullHistory: false
+                syncFullHistory: false,
+                getMessage: async () => undefined, // Prevent message history sync issues
+                shouldIgnoreJid: () => false,
+                retryRequestDelayMs: 250,
+                maxMsgRetryCount: 5
             });
 
             // Update message handler with socket instance
@@ -115,15 +150,30 @@ class WhatsAppBot {
                         await clearAuthState();
                         this.sock = null;
                         process.exit(0);
+                    } else if (statusCode === DisconnectReason.badSession || 
+                              statusCode === DisconnectReason.connectionClosed ||
+                              statusCode === DisconnectReason.connectionLost ||
+                              statusCode === DisconnectReason.restartRequired) {
+                        // Clear auth for critical errors that indicate bad session
+                        logger.warning('Critical session error - clearing auth state', { 
+                            statusCode: statusCode 
+                        });
+                        await clearAuthState();
+                        this.sock = null;
+                        setTimeout(() => this.connect(), 3000);
+                        return;
                     } else {
                         if (!this.isShuttingDown) {
                             retryCount++;
                             if (retryCount > maxRetries) {
-                                logger.error('Max retries exceeded - exiting');
-                                process.exit(1);
+                                logger.error('Max retries exceeded - clearing auth and restarting');
+                                await clearAuthState();
+                                setTimeout(() => this.connect(), 5000);
+                                retryCount = 0; // Reset retry count after clearing auth
+                                return;
                             }
                             logger.warning(`Connection attempt ${retryCount}/${maxRetries}`, { 
-                                reason: lastDisconnect?.error?.message 
+                                reason: lastDisconnect?.error?.message || 'Connection Failure'
                             });
                             setTimeout(() => this.connect(), 3000);
                         }

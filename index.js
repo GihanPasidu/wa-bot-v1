@@ -50,7 +50,7 @@ async function startBot() {
         await bot.connect();
         
         // Start HTTP server after bot connects
-        server = http.createServer((req, res) => {
+        server = http.createServer(async (req, res) => {
             if (req.url === '/health') {
                 res.writeHead(200);
                 res.end('OK');
@@ -89,6 +89,16 @@ async function startBot() {
                 } else {
                     res.writeHead(404);
                     res.end('No QR code available');
+                }
+            } else if (req.url === '/clear-auth') {
+                try {
+                    await clearAuthState();
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: true, message: 'Auth state cleared successfully' }));
+                    logger.info('Auth state cleared via web endpoint');
+                } catch (error) {
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: error.message }));
                 }
             } else {
                 res.writeHead(404);

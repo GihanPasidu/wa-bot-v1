@@ -29,10 +29,9 @@ async function getAuthState() {
 
     } catch (error) {
         logger.error('Error loading auth state', { error: error.message });
-        if (!process.env.RENDER) {
-            // Only clear on local dev
-            await clearAuthState();
-        }
+        // Clear auth state on any critical error
+        logger.warning('Clearing corrupted auth state');
+        await clearAuthState();
         return await useMultiFileAuthState(AUTH_FOLDER);
     }
 }
