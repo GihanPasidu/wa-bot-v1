@@ -178,6 +178,11 @@ async function shutdown(signal) {
             logger.disconnected('WhatsApp Bot');
         }
 
+        // Cleanup bot resources
+        if (bot && bot.cleanup) {
+            bot.cleanup();
+        }
+
         // Final cleanup delay
         await new Promise(resolve => setTimeout(resolve, 1000));
         

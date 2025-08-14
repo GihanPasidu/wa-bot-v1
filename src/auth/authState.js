@@ -35,12 +35,12 @@ async function getAuthState() {
             if (connectionAttempts > MAX_CONNECTION_ATTEMPTS) {
                 logger.warning(`Failed to connect after ${MAX_CONNECTION_ATTEMPTS} attempts - clearing auth for fresh start`);
                 await clearAuthState();
-                connectionAttempts = 0; // Reset counter
                 logger.auth('Auth state cleared - will generate new QR code');
+                // Return fresh auth state after clearing
+                return await useMultiFileAuthState(AUTH_FOLDER);
             }
         } else {
             logger.auth('No existing credentials found - will generate QR code');
-            connectionAttempts = 0; // Reset counter for fresh start
         }
 
         return await useMultiFileAuthState(AUTH_FOLDER);
@@ -50,7 +50,6 @@ async function getAuthState() {
         // Clear auth state on any critical error
         logger.warning('Clearing corrupted auth state');
         await clearAuthState();
-        connectionAttempts = 0; // Reset counter
         return await useMultiFileAuthState(AUTH_FOLDER);
     }
 }

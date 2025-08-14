@@ -14,16 +14,31 @@ class WhatsAppBot {
         this.maxQrDisplays = 5;
         this.qrShowing = false;
         this.qrCallback = null;
+        this.connectionTimeout = null;
     }
 
     setQRCallback(callback) {
         this.qrCallback = callback;
     }
 
+    cleanup() {
+        if (this.connectionTimeout) {
+            clearTimeout(this.connectionTimeout);
+            this.connectionTimeout = null;
+        }
+        this.isConnecting = false;
+    }
+
     async connect() {
         if (this.isConnecting) {
             logger.warning('Connection attempt already in progress');
             return;
+        }
+
+        // Clear any existing connection timeout
+        if (this.connectionTimeout) {
+            clearTimeout(this.connectionTimeout);
+            this.connectionTimeout = null;
         }
 
         this.isConnecting = true;
@@ -33,8 +48,10 @@ class WhatsAppBot {
         try {
             const { state, saveCreds } = await getAuthState();
             
-            // Initialize message handler before socket creation
-            this.messageHandler = new MessageHandler(null);
+            // Initialize message handler only once
+            if (!this.messageHandler) {
+                this.messageHandler = new MessageHandler(null);
+            }
 
             // Check creds status
             if (Object.keys(state.creds).length === 0) {
@@ -102,7 +119,10 @@ class WhatsAppBot {
                         logger.warning('QR code scan timeout - retrying connection');
                         this.qrShowing = false;
                         await this.sock.end();
-                        setTimeout(() => this.connect(), 3000);
+                        this.connectionTimeout = setTimeout(() => {
+                            this.isConnecting = false; // Reset connecting flag
+                            this.connect();
+                        }, 5000);
                         return;
                     }
 
@@ -141,21 +161,29 @@ class WhatsAppBot {
                             statusCode: statusCode 
                         });
                         this.sock = null;
-                        setTimeout(() => this.connect(), 3000);
+                        this.connectionTimeout = setTimeout(() => {
+                            this.isConnecting = false; // Reset connecting flag
+                            this.connect();
+                        }, 5000);
                         return;
                     } else {
                         if (!this.isShuttingDown) {
                             retryCount++;
                             if (retryCount > maxRetries) {
                                 logger.warning('Max connection retries exceeded - will restart with auth check');
-                                setTimeout(() => this.connect(), 5000);
-                                retryCount = 0; // Reset retry count
+                                this.connectionTimeout = setTimeout(() => {
+                                    this.isConnecting = false; // Reset connecting flag
+                                    this.connect();
+                                }, 10000); // Longer delay to prevent rapid restarts
                                 return;
                             }
                             logger.warning(`Connection attempt ${retryCount}/${maxRetries}`, { 
                                 reason: lastDisconnect?.error?.message || 'Connection Failure'
                             });
-                            setTimeout(() => this.connect(), 3000);
+                            this.connectionTimeout = setTimeout(() => {
+                                this.isConnecting = false; // Reset connecting flag
+                                this.connect();
+                            }, 5000); // 5 second delay between retries
                         }
                     }
                     return;
@@ -227,12 +255,22 @@ class WhatsAppBot {
             logger.error('Critical connection error', { error: error.message });
             if (retryCount < maxRetries) {
                 retryCount++;
-                setTimeout(() => this.connect(), 3000);
+                this.connectionTimeout = setTimeout(() => {
+                    this.isConnecting = false; // Reset connecting flag
+                    this.connect();
+                }, 5000);
             } else {
-                process.exit(1);
+                logger.error('Max critical errors reached - waiting before restart');
+                this.connectionTimeout = setTimeout(() => {
+                    this.isConnecting = false; // Reset connecting flag
+                    this.connect();
+                }, 15000); // Longer wait for critical errors
             }
         } finally {
-            this.isConnecting = false;
+            // Don't reset isConnecting here if we have a timeout pending
+            if (!this.connectionTimeout) {
+                this.isConnecting = false;
+            }
         }
     }
 }
