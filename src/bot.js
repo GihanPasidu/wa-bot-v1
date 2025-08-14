@@ -1,5 +1,5 @@
 const { default: makeWASocket, DisconnectReason, useMultiFileAuthState } = require('@whiskeysockets/baileys');
-const { getAuthState, clearAuthState, resetConnectionAttempts } = require('./auth/authState');
+const { getAuthState, clearAuthState, resetConnectionAttempts, getConnectionAttempts } = require('./auth/authState');
 const MessageHandler = require('./features/messageHandler');
 const qrcode = require('qrcode-terminal');
 const pino = require('pino');
@@ -46,6 +46,13 @@ class WhatsAppBot {
         const maxRetries = 2; // Reduced since auth module handles the main retry logic
 
         try {
+            // Check if we've exceeded max connection attempts globally
+            if (getConnectionAttempts() > 3) {
+                logger.warning('Too many failed session restores - forcing fresh QR session');
+                await clearAuthState();
+                resetConnectionAttempts();
+            }
+
             const { state, saveCreds } = await getAuthState();
             
             // Initialize message handler only once

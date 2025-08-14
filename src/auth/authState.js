@@ -76,6 +76,11 @@ function resetConnectionAttempts() {
     connectionAttempts = 0;
 }
 
+// Function to set connection attempts externally
+function setConnectionAttempts(val) {
+    connectionAttempts = val;
+}
+
 // Function to get current connection attempts count
 function getConnectionAttempts() {
     return connectionAttempts;
@@ -94,4 +99,4 @@ function hasValidSession() {
     }
 }
 
-module.exports = { getAuthState, clearAuthState, hasValidSession, resetConnectionAttempts, getConnectionAttempts };
+module.exports = { getAuthState, clearAuthState, hasValidSession, resetConnectionAttempts, getConnectionAttempts, setConnectionAttempts };
