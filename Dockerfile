@@ -30,8 +30,8 @@ RUN npm install --omit=dev
 # Copy application code
 COPY . .
 
-# Create directory for auth data
-RUN mkdir -p auth_info
+# Create directories for auth data and downloads
+RUN mkdir -p auth_info downloads/youtube downloads/status
 
 # Expose port
 EXPOSE $PORT

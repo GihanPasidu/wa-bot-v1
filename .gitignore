@@ -5,6 +5,9 @@ auth_info/
 config.env
 session.json
 
+# Downloads
+downloads/
+
 # Logs
 *.log
 npm-debug.log*

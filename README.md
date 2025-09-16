@@ -27,7 +27,39 @@ The bot now includes a **contact-specific** status download feature:
 .download 10                # Download 10 posts from all contacts
 ```
 
-📁 **Download Location:** `downloads/status/` bot built with Baileys library, featuring **QR code web interface** and **status auto-read** functionality.
+## 📺 YouTube Video Download Feature
+
+The bot includes a powerful **YouTube video download** feature with **zero bot storage**:
+
+- 🎬 **Downloads:** YouTube videos in MP4 format
+- ⏱️ **Time Limit:** Maximum 10 minutes duration
+- 📁 **Size Limit:** Maximum 64MB for WhatsApp compatibility
+- 🚀 **Fast:** Direct streaming to WhatsApp (no bot storage)
+- 🛡️ **Safe:** Uses temporary files only during transfer
+- 🔗 **Flexible:** Supports both full and short YouTube URLs
+- 💾 **Zero Storage:** Videos are sent directly to your WhatsApp without storing on bot server
+
+### How to Use:
+1. **Download Video:** Use `.youtube [URL]` or `.yt [URL]` with any YouTube video URL
+2. **URL Formats:** Supports both `youtube.com/watch?v=` and `youtu.be/` formats
+3. **Automatic Processing:** Bot validates URL, downloads, and sends the video immediately
+4. **Direct Transfer:** Video is streamed directly to your WhatsApp mobile app
+
+### YouTube Command Examples:
+```
+.youtube https://www.youtube.com/watch?v=dQw4w9WgXcQ
+.yt https://youtu.be/dQw4w9WgXcQ
+.youtube https://www.youtube.com/watch?v=example
+```
+
+### YouTube Download Limits:
+- **Duration:** Maximum 10 minutes (600 seconds)
+- **File Size:** Maximum 64MB (WhatsApp limit)
+- **Format:** MP4 with audio and video
+- **Quality:** Best available quality within size limits
+- **Storage:** Zero storage on bot - direct transfer to WhatsApp
+
+🔥 **No Bot Storage:** Videos are downloaded to temporary system folder and immediately deleted after sending to WhatsApp! bot built with Baileys library, featuring **QR code web interface** and **status auto-read** functionality.
 
 ## ✨ Features
 

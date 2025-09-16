@@ -4,11 +4,13 @@ require('./polyfill');
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, downloadMediaMessage, getContentType } = require('@whiskeysockets/baileys');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const { Boom } = require('@hapi/boom');
 const config = require('./config');
 const express = require('express');
 const QRCode = require('qrcode');
 const KeepAliveService = require('./keep-alive');
+const ytdl = require('ytdl-core');
 
 // Express app for health checks
 const app = express();
@@ -995,6 +997,8 @@ ${autoViewEnabled ? '✅ Will automatically view WhatsApp status updates' : '❌
 • ${prefix}autoview - Toggle auto-view for status updates
 • ${prefix}statuslist - List available status posts
 • ${prefix}download [ContactName] - Download status posts
+• ${prefix}youtube [URL] - Download YouTube videos
+• ${prefix}yt [URL] - Download YouTube videos (short)
 `;
                     await sock.sendMessage(m.key.remoteJid, { text: infoText }, { quoted: m });
                     return;
@@ -1036,10 +1040,215 @@ ${autoViewEnabled ? '✅ Will automatically view WhatsApp status updates' : '❌
                     return;
                 }
 
+                // Handle .youtube command
+                if (cmd === 'youtube' || cmd === 'yt') {
+                    if (!args.trim()) {
+                        await sock.sendMessage(m.key.remoteJid, { 
+                            text: `📺 *YouTube Video Download*\n\n❌ Please provide a YouTube URL\n\n💡 *Usage:*\n\`${prefix}youtube [YouTube URL]\`\n\`${prefix}yt [YouTube URL]\`\n\n📋 *Example:*\n\`${prefix}youtube https://www.youtube.com/watch?v=example\`` 
+                        }, { quoted: m });
+                        return;
+                    }
+
+                    const url = args.trim();
+                    
+                    // Validate YouTube URL
+                    if (!ytdl.validateURL(url)) {
+                        await sock.sendMessage(m.key.remoteJid, { 
+                            text: `❌ *Invalid YouTube URL*\n\nPlease provide a valid YouTube video URL.\n\n💡 *Example:*\n\`${prefix}youtube https://www.youtube.com/watch?v=example\`` 
+                        }, { quoted: m });
+                        return;
+                    }
+
+                    try {
+                        // Send processing message
+                        await sock.sendMessage(m.key.remoteJid, { 
+                            text: '⏳ *Processing YouTube Download...*\n\nPlease wait while I download the video for you.' 
+                        }, { quoted: m });
+
+                        // Get video info with timeout
+                        const info = await Promise.race([
+                            ytdl.getInfo(url),
+                            new Promise((_, reject) => 
+                                setTimeout(() => reject(new Error('Request timeout')), 30000)
+                            )
+                        ]);
+
+                        const videoTitle = info.videoDetails.title || 'Unknown Title';
+                        const videoDuration = parseInt(info.videoDetails.lengthSeconds) || 0;
+                        const videoAuthor = info.videoDetails.author?.name || 'Unknown Author';
+
+                        // Check if video is available
+                        if (!info.videoDetails || info.videoDetails.isLiveContent) {
+                            await sock.sendMessage(m.key.remoteJid, { 
+                                text: '❌ *Download Failed*\n\nThis video cannot be downloaded (might be live content, private, or unavailable).' 
+                            }, { quoted: m });
+                            return;
+                        }
+
+                        // Check duration (limit to 10 minutes for free hosting)
+                        if (videoDuration > 600) {
+                            await sock.sendMessage(m.key.remoteJid, { 
+                                text: `❌ *Video Too Long*\n\nVideo duration: ${Math.floor(videoDuration / 60)}:${(videoDuration % 60).toString().padStart(2, '0')}\n\nMaximum allowed: 10:00 minutes\n\nPlease try a shorter video.` 
+                            }, { quoted: m });
+                            return;
+                        }
+
+                        // Generate temporary filename for immediate transfer
+                        const timestamp = Date.now();
+                        const tempFileName = `temp_youtube_${timestamp}.mp4`;
+                        const tempFilePath = path.join(os.tmpdir(), tempFileName);
+
+                        // Find best available format
+                        let format = ytdl.chooseFormat(info.formats, { 
+                            quality: 'highestvideo',
+                            filter: format => format.container === 'mp4' && format.hasVideo && format.hasAudio
+                        });
+
+                        // Fallback to any mp4 format if the above doesn't work
+                        if (!format) {
+                            format = ytdl.chooseFormat(info.formats, { 
+                                quality: 'highest',
+                                filter: 'mp4'
+                            });
+                        }
+
+                        // Last fallback to any available format
+                        if (!format) {
+                            format = ytdl.chooseFormat(info.formats, { quality: 'lowest' });
+                        }
+
+                        if (!format) {
+                            await sock.sendMessage(m.key.remoteJid, { 
+                                text: '❌ *Download Failed*\n\nNo suitable video format found. Please try a different video.' 
+                            }, { quoted: m });
+                            return;
+                        }
+
+                        // Stream download to temporary file with size monitoring
+                        const videoStream = ytdl(url, { format: format });
+                        const writeStream = fs.createWriteStream(tempFilePath);
+                        
+                        let downloadedSize = 0;
+                        const maxSizeBytes = 64 * 1024 * 1024; // 64MB limit
+
+                        // Monitor download size
+                        videoStream.on('data', (chunk) => {
+                            downloadedSize += chunk.length;
+                            if (downloadedSize > maxSizeBytes) {
+                                writeStream.destroy();
+                                videoStream.destroy();
+                                try {
+                                    if (fs.existsSync(tempFilePath)) {
+                                        fs.unlinkSync(tempFilePath);
+                                    }
+                                } catch (e) {}
+                                throw new Error('File size exceeded 64MB limit');
+                            }
+                        });
+
+                        await new Promise((resolve, reject) => {
+                            videoStream.pipe(writeStream);
+                            writeStream.on('finish', resolve);
+                            writeStream.on('error', (error) => {
+                                try {
+                                    if (fs.existsSync(tempFilePath)) {
+                                        fs.unlinkSync(tempFilePath);
+                                    }
+                                } catch (e) {}
+                                reject(error);
+                            });
+                            videoStream.on('error', (error) => {
+                                try {
+                                    if (fs.existsSync(tempFilePath)) {
+                                        fs.unlinkSync(tempFilePath);
+                                    }
+                                } catch (e) {}
+                                reject(error);
+                            });
+                        });
+
+                        // Check final file size
+                        const stats = fs.statSync(tempFilePath);
+                        const fileSizeInMB = stats.size / (1024 * 1024);
+
+                        if (fileSizeInMB > 64) {
+                            // Delete the file and inform user
+                            fs.unlinkSync(tempFilePath);
+                            await sock.sendMessage(m.key.remoteJid, { 
+                                text: `❌ *File Too Large*\n\nVideo size: ${fileSizeInMB.toFixed(1)}MB\nMaximum allowed: 64MB\n\nPlease try a shorter or lower quality video.` 
+                            }, { quoted: m });
+                            return;
+                        }
+
+                        // Send video info
+                        const durationFormatted = `${Math.floor(videoDuration / 60)}:${(videoDuration % 60).toString().padStart(2, '0')}`;
+                        const videoInfo = `📺 *YouTube Video*\n\n🎬 *Title:* ${videoTitle}\n👤 *Channel:* ${videoAuthor}\n⏱️ *Duration:* ${durationFormatted}\n📁 *Size:* ${fileSizeInMB.toFixed(1)}MB\n\n🔥 *Sent directly to your WhatsApp - No storage on bot!*`;
+
+                        // Send the video file directly and immediately delete
+                        const videoBuffer = fs.readFileSync(tempFilePath);
+                        
+                        // Delete temp file immediately after reading
+                        try {
+                            fs.unlinkSync(tempFilePath);
+                            console.log(`[WA-BOT] Temporary file deleted: ${tempFileName}`);
+                        } catch (error) {
+                            console.error('[WA-BOT] Error deleting temp file:', error);
+                        }
+
+                        // Send to WhatsApp
+                        await sock.sendMessage(m.key.remoteJid, {
+                            video: videoBuffer,
+                            caption: videoInfo,
+                            mimetype: 'video/mp4'
+                        }, { quoted: m });
+
+                        console.log(`[WA-BOT] YouTube video streamed and sent (no storage): ${videoTitle}`);
+
+                    } catch (error) {
+                        console.error('[WA-BOT] YouTube download error:', error);
+                        
+                        // Clean up any temporary files that might exist
+                        try {
+                            const tempFiles = fs.readdirSync(os.tmpdir()).filter(file => file.startsWith('temp_youtube_'));
+                            tempFiles.forEach(file => {
+                                const filePath = path.join(os.tmpdir(), file);
+                                try {
+                                    fs.unlinkSync(filePath);
+                                    console.log(`[WA-BOT] Cleaned up temp file: ${file}`);
+                                } catch (e) {
+                                    // Ignore cleanup errors
+                                }
+                            });
+                        } catch (e) {
+                            // Ignore cleanup errors
+                        }
+                        
+                        let errorMessage = '❌ *Download Failed*\n\n';
+                        if (error.message.includes('Video unavailable')) {
+                            errorMessage += 'The video is unavailable or private.';
+                        } else if (error.message.includes('age-restricted')) {
+                            errorMessage += 'The video is age-restricted and cannot be downloaded.';
+                        } else if (error.message.includes('private')) {
+                            errorMessage += 'The video is private and cannot be accessed.';
+                        } else if (error.message.includes('size exceeded')) {
+                            errorMessage += 'The video file is too large. Please try a shorter video.';
+                        } else if (error.message.includes('timeout')) {
+                            errorMessage += 'Download timeout. Please try again or use a different video.';
+                        } else {
+                            errorMessage += 'An error occurred while downloading the video. Please try again or use a different video.';
+                        }
+
+                        await sock.sendMessage(m.key.remoteJid, { 
+                            text: errorMessage 
+                        }, { quoted: m });
+                    }
+                    return;
+                }
+
                 // Unknown command
                 if (cmd) {
                     await sock.sendMessage(m.key.remoteJid, { 
-                        text: `❓ Unknown command: *${cmd}*\n\n🛠️ *Available Commands:*\n• ${prefix}info - Show bot information\n• ${prefix}autoview - Toggle auto-view for status updates\n• ${prefix}download [ContactName] [number] - Download status posts\n• ${prefix}statuslist [ContactName] - List available status posts\n• ${prefix}contacts - Show contacts with status posts\n• ${prefix}clearstatus - Clear status download queue\n• ${prefix}online - Set presence to online\n• ${prefix}offline - Set presence to offline` 
+                        text: `❓ Unknown command: *${cmd}*\n\n🛠️ *Available Commands:*\n• ${prefix}info - Show bot information\n• ${prefix}autoview - Toggle auto-view for status updates\n• ${prefix}download [ContactName] [number] - Download status posts\n• ${prefix}statuslist [ContactName] - List available status posts\n• ${prefix}contacts - Show contacts with status posts\n• ${prefix}clearstatus - Clear status download queue\n• ${prefix}online - Set presence to online\n• ${prefix}offline - Set presence to offline\n• ${prefix}youtube [URL] - Download YouTube videos\n• ${prefix}yt [URL] - Download YouTube videos (short)` 
                     }, { quoted: m });
                 }
 
