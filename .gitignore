@@ -1,4 +1,28 @@
-node_modules/
+# Authentication
 auth_info/
-media/
+*.env
 .env
+config.env
+session.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+
+# Dependency directories
+node_modules/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# OS files
+.DS_Store
+Thumbs.db

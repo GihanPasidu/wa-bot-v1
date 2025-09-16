@@ -1,0 +1,25 @@
+{
+  "name": "Whatsapp-bot",
+  "description": "Javascript WhatsApp bot made by CloudNextra",
+  "logo": "https://drive.google.com/file/d/1hLP8di6ghsp231kEMwb9AKYB_OBLJ_Jo/view?usp=sharing",
+  "keywords": ["bot"],
+  "success_url": "/",
+
+  "env": {
+    "AUTO_VIEW_STATUS": {
+      "description": "Enable auto-view for status updates (true/false)",
+      "required": false
+    },
+    "STATUS_DOWNLOAD": {
+      "description": "Enable status download tracking (true/false)",
+      "required": false
+    }
+  },
+
+  "buildpacks": [
+    {
+      "url": "https://github.com/heroku/heroku-buildpack-nodejs.git"
+    }
+  ],
+  "stack": "heroku-24"
+}

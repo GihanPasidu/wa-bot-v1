@@ -1,44 +1,25 @@
 services:
   - type: web
-    name: whatsapp-bot
-    env: node
-    buildCommand: npm install
-    startCommand: node index.js
-    plan: starter
-    scaling:
-      minInstances: 1
-      maxInstances: 1
+    name: cloudnextra-wa-bot
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
     envVars:
       - key: NODE_ENV
         value: production
-      - key: RENDER
-        value: true
-    disk:
-      name: auth-data
-      mountPath: /data
-      sizeGB: 1
+      - key: SESSION_ID
+        sync: false
+      - key: AUTO_READ_STATUS
+        value: "false"
+      - key: STATUS_DOWNLOAD
+        value: "true"
+      - key: PORT
+        value: "10000"
+      - key: RENDER_EXTERNAL_URL
+        value: https://cloudnextra-wa-bot.onrender.com
     healthCheckPath: /health
-    autoDeploy: false
-    buildFilter:
-      paths:
-        - src/**
-        - index.js
-        - package.json
-    startupProbe:
-      path: /health
-      failureThreshold: 10
-      periodSeconds: 10
-    resources:
-      cpu: 0.5
-      memory: 512Mi
-    healthCheck:
-      grace: 10
-      interval: 30
-      timeout: 5
-      retries: 3
-
-  # Add a cron job to keep the instance alive
-  - type: cron
-    name: keep-alive
-    schedule: "*/5 * * * *"
-    command: curl $RENDER_EXTERNAL_URL/health
+    disk:
+      name: wa-bot-storage
+      mountPath: /app/auth_info
+      sizeGB: 1

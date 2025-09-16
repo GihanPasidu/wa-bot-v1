@@ -1,81 +1,196 @@
-# CloudNextra WhatsApp Bot
+# 🤖 CloudNextra WhatsApp Bot
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+A professional Wha## 📥 Status Download Feature
 
-A feature-rich WhatsApp bot built with Baileys, designed for seamless deployment on Render.
+The bot now includes a **contact-specific** status download feature:
 
-## Features
-- 🚀 Auto status view
-- 📵 Call blocking protection
-- 🖼️ Sticker creation
-- ⚙️ Easy control panel
-- 🔄 Auto-reconnect
-- 💾 Session persistence
+- ✅ **Tracks:** All incoming status posts from contacts
+- 📱 **Downloads:** Images, videos, and text status posts
+- 👥 **Contact-Specific:** Download from specific contacts only
+- 💾 **Storage:** Saves to `downloads/status/` folder
+- 🎯 **Selective:** Only downloads when you request it
+- 🔄 **Management:** Auto-cleans old status posts after 24 hours
 
-## Deploy to Render
-1. Fork this repository
-2. Click the "Deploy to Render" button
-3. Connect your GitHub account
-4. Configure environment variables:
-   ```env
-   AUTO_READ_STATUS=true
-   ANTI_CALL=true
-   WELCOME_MESSAGE=Welcome! 👋
-   GOODBYE_MESSAGE=Goodbye! 👋
+### How to Use:
+1. **View Available Contacts:** Use `.contacts` to see all contacts with status posts
+2. **List Contact's Status:** Use `.statuslist ContactName` to see specific contact's posts
+3. **Download from Contact:** Use `.download ContactName` to download from specific person
+4. **Download Specific Amount:** Use `.download ContactName 3` to download 3 posts from contact
+5. **Download from All:** Use `.download 5` to download 5 posts from all contacts
+
+### Command Examples:
+```
+.contacts                    # Show all contacts with status posts
+.statuslist John            # List John's available status posts
+.download John              # Download 5 latest posts from John
+.download John 3            # Download 3 latest posts from John
+.download 10                # Download 10 posts from all contacts
+```
+
+📁 **Download Location:** `downloads/status/` bot built with Baileys library, featuring **QR code web interface** and **status auto-read** functionality.
+
+## ✨ Features
+
+- 🔐 Multi-device WhatsApp connection
+- 📱 **QR code web interface** - No need to check terminal!
+- 📊 **Auto-read status updates** - Only reads status, not messages
+- 📥 **On-demand status download** - Download status posts with commands
+- 🌐 Beautiful web dashboard with real-time status
+- ⚡ Fast and reliable message handling
+- 🔄 Auto-reconnection with retry logic
+- 🐳 Docker containerization
+- ☁️ Render deployment ready
+
+## 🚀 Quick Start
+
+### Local Development
+
+1. **Clone and install**
+   ```bash
+   git clone https://github.com/yourusername/WA-BOT.git
+   cd WA-BOT
+   npm install
    ```
-5. Deploy and watch the logs for QR code
-6. Scan QR with WhatsApp mobile app
-7. If bot gets stuck in connection loop, visit `/clear-auth` endpoint to reset
 
-## Troubleshooting
-- **Connection Loop**: Bot tries existing auth 3 times, then auto-generates new QR code
-- **Manual Reset**: Visit `https://your-app.onrender.com/clear-auth` to force clear auth state
-- **QR Code**: Visit `https://your-app.onrender.com/qr` to see QR code in browser
-- **Bot Status**: Visit `https://your-app.onrender.com/status` to check connection status
-- **No QR Code**: Check logs for errors, may need to clear auth state first
+2. **Start the bot**
+   ```bash
+   npm start
+   ```
 
-## Available Endpoints
-- `/health` - Health check for Render
-- `/ping` - Ping endpoint  
-- `/qr` - View QR code in browser
-- `/clear-auth` - Manually clear authentication state
-- `/status` - Check bot status and connection attempts
+3. **Connect WhatsApp via Web Interface**
+   - Open http://localhost:10000 in your browser
+   - The QR code will automatically appear when disconnected
+   - Scan with WhatsApp: Settings → Linked Devices → Link a Device
+   - No need to check terminal!
 
-## Bot Commands
-- `.panel` - Show control panel menu
-- `.autoread` - Toggle auto status view
-- `.anticall` - Toggle call blocking
-- `.sticker` - Create sticker from image
+## 🎮 Bot Commands
 
-## Local Development
-1. Clone the repository
-```bash
-git clone https://github.com/yourusername/whatsapp.git
-cd whatsapp
+| Command | Description |
+|---------|-------------|
+| `.info` | Show bot information and statistics |
+| `.autoview` | Toggle auto-view for status updates |
+| `.download [ContactName] [number]` | Download status posts from specific contact or all |
+| `.statuslist [ContactName]` | List available status posts (all or from specific contact) |
+| `.contacts` | Show all contacts with available status posts |
+| `.clearstatus` | Clear the status download queue |
+| `.online` | Set presence to online |
+| `.offline` | Set presence to offline |
+
+## � Status Download Feature
+
+The bot now includes an on-demand status download feature:
+
+- ✅ **Tracks:** All incoming status posts from contacts
+- 📱 **Downloads:** Images, videos, and text status posts
+- 💾 **Storage:** Saves to `downloads/status/` folder
+- 🎯 **Selective:** Only downloads when you request it
+- 🔄 **Management:** Auto-cleans old status posts after 24 hours
+
+### How to Use:
+1. **View Available Status:** Use `.statuslist` to see available posts
+2. **Download Status:** Use `.download` to download up to 5 posts, or `.download 10` for specific amount
+3. **Clear Queue:** Use `.clearstatus` to clear the status list
+
+📁 **Download Location:** `downloads/status/`
+
+## �📊 Auto-View Feature
+
+The auto-view feature is designed to **only view status updates**, not regular messages:
+
+- ✅ **Views:** WhatsApp status updates automatically
+- ❌ **Doesn't view:** Regular chat messages  
+- 🔧 **Toggle:** Use `.autoview` command to enable/disable
+
+This ensures your privacy while keeping up with status updates from contacts.
+
+## 📡 API Endpoints
+
+- `GET /` - Web dashboard with QR code interface
+- `GET /qr` - QR code API endpoint
+- `GET /status` - Bot connection status
+- `GET /health` - Health check
+- `GET /ping` - Keep-alive ping
+
+## 🔧 QR Code Troubleshooting
+
+If the QR code doesn't appear:
+
+1. **Check the console logs** for QR generation messages
+2. **Refresh the page** - the QR updates automatically
+3. **Clear auth_info folder** if you're having session issues
+4. **Check browser console** for JavaScript errors
+
+The QR code will only appear when:
+- The bot is disconnected from WhatsApp
+- A new session needs to be established
+- The previous session has expired
+
+---
+
+Made with ❤️ by [CloudNextra](https://cloudnextra.com)
+- Reconnection attempts
+- Command prefix
+- Keep-alive settings
+- Logging levels
+
+## 📡 API Endpoints
+
+- `GET /` - Web dashboard with QR code
+- `GET /health` - Health check
+- `GET /ping` - Keep-alive ping
+- `GET /qr` - QR code API
+- `GET /status` - Bot status
+- `GET /keep-alive-stats` - Keep-alive statistics
+
+## 🔧 Development
+
+### Project Structure
+
+```
+WA-BOT/
+├── index.js          # Main bot file
+├── config.js         # Configuration
+├── polyfill.js       # Node.js polyfills
+├── keep-alive.js     # Keep-alive service
+├── package.json      # Dependencies
+├── Dockerfile        # Container config
+├── render.yaml       # Render deployment
+└── auth_info/        # WhatsApp session data
 ```
 
-2. Install dependencies
+### Scripts
+
 ```bash
-npm install
+npm start          # Start the bot
+npm run dev        # Development mode
+npm run docker:build  # Build Docker image
+npm run docker:run    # Run Docker container
 ```
 
-3. Create `.env` file with required variables
-4. Start the bot
-```bash
-npm start
-```
+## 🛡️ Security
 
-## Important Notes
-- For security, never share your auth_info folder or QR codes
-- First run requires QR code scan
-- Session is persisted in Render disk storage
-- Bot stays active using health checks
+- Commands only work in self-chat
+- Session data is encrypted
+- No sensitive data in logs
+- Secure Docker container
 
-## Support
-- Report issues on GitHub
-- Contribute via pull requests
-- Contact: cloudnextra@gmail.com
-- Whatsapp: https://wa.me/94767219661
+## 📝 License
 
-## License
-MIT License - feel free to use and modify
+Apache License 2.0 - see [LICENSE](LICENSE) file
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## 📞 Support
+
+- 🐛 [Report bugs](https://github.com/yourusername/WA-BOT/issues)
+- 💬 [Discussions](https://github.com/yourusername/WA-BOT/discussions)
+- 📧 Contact: contact@cloudnextra.dev
+
+---
+
+Made by [CloudNextra](https://cloudnextra.dev)

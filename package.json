@@ -1,39 +1,37 @@
 {
-  "name": "cloudnextra-whatsapp-bot",
+  "name": "cloudnextra-wa-bot",
   "version": "1.0.0",
-  "description": "CloudNextra WhatsApp Bot with auto-reply and sticker functionality",
+  "description": "Professional WhatsApp Bot by CloudNextra",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "docker:build": "docker build -t wa-bot .",
+    "docker:run": "docker run -p 3000:3000 wa-bot",
+    "test": "echo \"No tests specified\" && exit 0"
   },
   "keywords": [
     "whatsapp",
     "bot",
-    "automation",
-    "sticker",
-    "auto-reply"
+    "baileys",
+    "cloudnextra",
+    "render",
+    "docker"
   ],
-  "author": "CloudNextra Solutions",
-  "license": "MIT",
+  "author": "CloudNextra",
+  "license": "Apache-2.0",
   "dependencies": {
-    "@whiskeysockets/baileys": "^6.4.0",
-    "chalk": "^4.1.2",
-    "dotenv": "^16.3.1",
-    "node-fetch": "^2.7.0",
-    "pino": "^8.15.0",
-    "qrcode-terminal": "^0.12.0",
-    "sharp": "^0.32.5"
+    "@hapi/boom": "^10.0.1",
+    "@whiskeysockets/baileys": "^7.0.0-rc.3",
+    "crypto-browserify": "^3.12.0",
+    "express": "^4.19.2",
+    "qrcode": "^1.5.3"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.1.9"
   },
   "engines": {
-    "node": ">=18.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/yourusername/whatsapp-bot.git"
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   }
 }

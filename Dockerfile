@@ -1,36 +1,44 @@
 FROM node:18-slim
 
-# Install required system packages including crypto dependencies
-RUN apt-get update && apt-get install -y \
+# Set Node.js environment variables for better compatibility
+ENV NODE_ENV=production
+ENV NODE_OPTIONS="--max-old-space-size=1024"
+
+# Install system dependencies including git
+RUN apt-get update && \
+    apt-get install -y \
+    git \
+    ffmpeg \
+    imagemagick \
+    webp \
+    curl \
     python3 \
-    build-essential \
-    openssl \
+    make \
+    g++ \
+    && apt-get upgrade -y \
     && rm -rf /var/lib/apt/lists/*
 
+# Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm install --omit=dev
 
-# Copy app source
+# Copy application code
 COPY . .
 
-# Create auth_info directory
-RUN mkdir -p /app/auth_info
+# Create directory for auth data
+RUN mkdir -p auth_info
 
-# Create persistent storage directory
-RUN mkdir -p /data/auth_info && \
-    chown -R node:node /data
+# Expose port
+EXPOSE $PORT
 
-# Set environment variables
-ENV NODE_ENV=production
-ENV OPENSSL_CONF=/etc/ssl/openssl.cnf
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:$PORT/health || exit 1
 
-# Set data directory environment variable
-ENV RENDER=true
-
-# Start the bot
+# Start the application
 CMD ["npm", "start"]
