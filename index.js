@@ -1,10 +1,9 @@
 // Load polyfills first
 require('./polyfill');
 
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, downloadMediaMessage, getContentType } = require('@whiskeysockets/baileys');
-const fs = require('fs');
-const path = require('path');
-const { Boom } = require('@hapi/boom');
+// Import advanced bot implementation
+const WhatsAppBot = require('./src/bot');
+const logger = require('./src/utils/logger');
 const config = require('./config');
 const express = require('express');
 const QRCode = require('qrcode');
@@ -23,12 +22,9 @@ let qrCodeData = null;
 let connectionStatus = 'disconnected';
 let lastQRUpdate = null;
 
-// Bot state variables - MOVED BEFORE USAGE
-let isConnecting = false;
-let currentSock = null;
-let retryCount = 0;
+// Bot instance
+let whatsappBot = null;
 let botId = null;
-const maxRetries = config.reconnectAttempts ?? 5;
 
 // Presence tracking
 let currentPresence = 'available'; // Default to online
@@ -49,7 +45,7 @@ app.get('/health', (req, res) => {
         status: 'ok', 
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
-        botConnected: !!currentSock,
+        botConnected: whatsappBot && whatsappBot.sock,
         connectionStatus: connectionStatus,
         keepAliveEnabled: !!RENDER_URL,
         memoryUsage: process.memoryUsage()
@@ -112,7 +108,7 @@ app.get('/qr', async (req, res) => {
 
 app.get('/status', (req, res) => {
     res.json({
-        connected: !!currentSock && connectionStatus === 'connected',
+        connected: whatsappBot && whatsappBot.sock && connectionStatus === 'connected',
         status: connectionStatus,
         presence: currentPresence,
         uptime: Math.floor(process.uptime()),
@@ -377,294 +373,80 @@ app.get('/', (req, res) => {
 
 // Add graceful shutdown for Docker
 process.on('SIGTERM', () => {
-    console.log('[WA-BOT] Received SIGTERM. Gracefully shutting down...');
-    if (currentSock) {
-        currentSock.end();
+    logger.warning('Received SIGTERM. Gracefully shutting down...');
+    if (whatsappBot && whatsappBot.sock) {
+        whatsappBot.sock.end();
     }
     process.exit(0);
 });
 
 process.on('SIGINT', () => {
-    console.log('[WA-BOT] Received SIGINT. Gracefully shutting down...');
-    if (currentSock) {
-        currentSock.end();
+    logger.warning('Received SIGINT. Gracefully shutting down...');
+    if (whatsappBot && whatsappBot.sock) {
+        whatsappBot.sock.end();
     }
     process.exit(0);
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[WA-BOT] Health server running on port ${PORT}`);
-});
-
-async function connectToWhatsApp() {
-    // avoid parallel connects
-    if (isConnecting) return;
-    isConnecting = true;
-
+// Initialize the advanced WhatsApp bot
+async function initializeBot() {
     try {
-        // Use Docker-friendly auth path
-        const authPath = process.env.RENDER ? '/app/auth_info' : 'auth_info';
-        const { state, saveCreds } = await useMultiFileAuthState(authPath);
-        const { version } = await fetchLatestBaileysVersion();
-
-        const sock = makeWASocket({
-            version,
-            printQRInTerminal: true,
-            auth: state,
-            connectTimeoutMs: 60_000,
-            emitOwnEvents: true,
-            retryRequestDelayMs: 2000,
-            browser: ['CloudNextra Bot', 'Desktop', '1.0.0'],
-        });
-
-        // persist credentials on update
-        sock.ev.on('creds.update', saveCreds);
-
-        // keep reference for safe close on reconnect
-        if (currentSock && currentSock !== sock) {
-            try { currentSock.end?.(); } catch (e) { /* ignore */ }
-        }
-        currentSock = sock;
-
-        // reset retry counter when we successfully connect
-        retryCount = 0;
-
-        // store bot id when connection opens
-        sock.ev.on('connection.update', (update) => {
-            const { connection, lastDisconnect, qr } = update;
-
-            // Handle QR code - IMPROVED LOGGING
-            if (qr) {
-                qrCodeData = qr;
-                lastQRUpdate = new Date().toISOString();
-                connectionStatus = 'qr_ready';
-                console.log('[WA-BOT] ✅ QR Code generated and stored for web display');
-                console.log('[WA-BOT] QR Code length:', qr.length);
-            }
-
-            if (connection === 'close') {
-                connectionStatus = 'disconnected';
-                qrCodeData = null;
-                console.log('[WA-BOT] ❌ Connection closed, QR cleared');
-                const rawError = lastDisconnect?.error;
-                const statusCode = rawError?.output?.statusCode;
-                const errorMsg = rawError?.message || JSON.stringify(rawError);
-                
-                const isDeviceRemoved = errorMsg?.toString().toLowerCase().includes('device_removed') || 
-                                      errorMsg?.toString().toLowerCase().includes('device removed') || 
-                                      (statusCode === 401 && errorMsg?.toString().toLowerCase().includes('conflict'));
-                const isStreamRestartRequired = statusCode === 515 || /restart required/i.test(errorMsg) || /stream errored/i.test(errorMsg);
-
-                const shouldReconnect = (statusCode !== DisconnectReason.loggedOut && statusCode !== 405) && !isDeviceRemoved;
-
-                console.log('[WA-BOT] Connection closed:', errorMsg, 'Code:', statusCode, 'Reconnect:', shouldReconnect);
-
-                // Non-recoverable device/session removal
-                if (isDeviceRemoved || statusCode === 401) {
-                    console.warn('[WA-BOT] Device/session removed. Clearing local auth and re-registering.');
-                    try {
-                        fs.rmSync(authPath, { recursive: true, force: true });
-                        console.log('[WA-BOT] Local auth_info cleared.');
-                    } catch (e) {
-                        console.error('[WA-BOT] Failed to clear local auth:', e);
-                    }
-
-                    try { sock.end?.(); } catch (e) { /* ignore */ }
-                    currentSock = null;
-
-                    retryCount++;
-                    if (retryCount < maxRetries) {
-                        const delay = config.reconnectDelayOnAuthReset ?? 3000;
-                        setTimeout(() => {
-                            isConnecting = false;
-                            connectToWhatsApp();
-                        }, delay);
-                    } else {
-                        console.error('[WA-BOT] Max retries after auth reset. Exiting.');
-                        setTimeout(() => process.exit(1), 1000);
-                    }
-                    return;
-                }
-
-                // Stream restart required
-                if (isStreamRestartRequired) {
-                    console.warn('Stream error (restart required) detected — attempting controlled in-process restart.');
-                    try { sock.end?.(); } catch (e) { /* ignore */ }
-                    currentSock = null;
-
-                    retryCount++;
-                    if (retryCount < maxRetries) {
-                        const delay = config.reconnectDelayOnStreamError ?? (config.reconnectDelay ?? 10000);
-                        setTimeout(() => {
-                            isConnecting = false;
-                            connectToWhatsApp();
-                        }, delay);
-                    } else {
-                        console.error('Exceeded max retries for stream errors — exiting to allow supervisor restart.');
-                        setTimeout(() => process.exit(1), 1000);
-                    }
-                    return;
-                }
-
-                // Default reconnect path for recoverable disconnects
-                if (shouldReconnect && retryCount < maxRetries) {
-                    retryCount++;
-                    try { sock.end?.(); } catch (e) { /* ignore */ }
-                    setTimeout(() => {
-                        isConnecting = false;
-                        connectToWhatsApp();
-                    }, config.reconnectDelay ?? 5000);
-                } else {
-                    console.error('[WA-BOT] Max reconnect attempts reached. Exiting.');
-                    setTimeout(() => process.exit(1), 1000);
-                }
-            } else if (connection === 'open') {
-                connectionStatus = 'connected';
-                qrCodeData = null;
-                botId = update?.me?.id || sock?.user?.id || botId;
-                console.log(`[WA-BOT] ✅ Connected as ${botId}, QR cleared`);
-            } else if (connection === 'connecting') {
-                connectionStatus = 'connecting';
-                console.log('[WA-BOT] 🔄 Connecting to WhatsApp...');
-            }
-        });
-
-        // Message handler with all commands
-        sock.ev.on('messages.upsert', async ({ messages }) => {
-            const m = messages[0];
-            if (!m?.message) return;
-
-            const messageType = Object.keys(m.message)[0];
-            const messageContent = m.message[messageType];
-
-            // extract plain text for common message types
-            let text = '';
-            if (messageType === 'conversation') text = messageContent.conversation || '';
-            else if (messageType === 'extendedTextMessage') text = messageContent.text || messageContent?.contextInfo?.quotedMessage?.conversation || '';
-            else text = (messageContent?.caption || messageContent?.text) || '';
-
-            // normalize prefix and command
-            const prefix = config?.commands?.prefix ?? '.';
-            const isCommand = text.startsWith(prefix);
-            const parts = isCommand ? text.slice(prefix.length).trim().split(/\s+/) : [];
-            const cmd = parts[0]?.toLowerCase();
-            const args = parts.slice(1).join(' ');
-
-            // Only respond to commands from self
-            if (!isCommand || !m.key.fromMe) {
-                return;
-            }
-
-            try {
-                // Handle .info command
-                if (cmd === 'info') {
-                    const uptimeSeconds = Math.floor(process.uptime());
-                    const hours = Math.floor(uptimeSeconds / 3600);
-                    const minutes = Math.floor((uptimeSeconds % 3600) / 60);
-                    const seconds = uptimeSeconds % 60;
-                    const uptimeFormatted = `${hours}h ${minutes}m ${seconds}s`;
-                    
-                    const infoText = 
-`╔═════════════════════════════╗
-║   CloudNextra Bot — Info    ║
-╚═════════════════════════════╝
-
-📊 *Bot Status:*
-• Connection: ${connectionStatus === 'connected' ? '🟢 Connected' : '🔴 Disconnected'}
-• Presence: ${currentPresence === 'available' ? '🟢 Online' : '🔴 Offline'}
-• Uptime: ${uptimeFormatted}
-
-🛠️ *Available Commands:*
-• ${prefix}info - Show bot information
-• ${prefix}online - Set presence to online
-• ${prefix}offline - Set presence to offline
-`;
-                    await sock.sendMessage(m.key.remoteJid, { text: infoText }, { quoted: m });
-                    return;
-                }
-
-                // Handle .online command
-                if (cmd === 'online') {
-                    try {
-                        await sock.sendPresenceUpdate('available', m.key.remoteJid);
-                        currentPresence = 'available';
-                        await sock.sendMessage(m.key.remoteJid, { 
-                            text: '🟢 *Status Updated*\n\nPresence set to: *Online*' 
-                        }, { quoted: m });
-                        console.log('[WA-BOT] Presence set to online');
-                    } catch (error) {
-                        await sock.sendMessage(m.key.remoteJid, { 
-                            text: '❌ Failed to set presence to online' 
-                        }, { quoted: m });
-                        console.error('[WA-BOT] Online command error:', error);
-                    }
-                    return;
-                }
-
-                // Handle .offline command
-                if (cmd === 'offline') {
-                    try {
-                        await sock.sendPresenceUpdate('unavailable', m.key.remoteJid);
-                        currentPresence = 'unavailable';
-                        await sock.sendMessage(m.key.remoteJid, { 
-                            text: '🔴 *Status Updated*\n\nPresence set to: *Offline*' 
-                        }, { quoted: m });
-                        console.log('[WA-BOT] Presence set to offline');
-                    } catch (error) {
-                        await sock.sendMessage(m.key.remoteJid, { 
-                            text: '❌ Failed to set presence to offline' 
-                        }, { quoted: m });
-                        console.error('[WA-BOT] Offline command error:', error);
-                    }
-                    return;
-                }
-
-                // Unknown command
-                if (cmd) {
-                    await sock.sendMessage(m.key.remoteJid, { 
-                        text: `❓ Unknown command: *${cmd}*\n\n🛠️ *Available Commands:*\n• ${prefix}info - Show bot information\n• ${prefix}online - Set presence to online\n• ${prefix}offline - Set presence to offline` 
-                    }, { quoted: m });
-                }
-
-            } catch (error) {
-                console.error('[WA-BOT] Command error:', error);
-                await sock.sendMessage(m.key.remoteJid, { 
-                    text: '❌ An error occurred while processing your command.' 
-                }, { quoted: m });
-            }
-
-            // Log received messages
-            console.log('[WA-BOT] Command executed:', {
-                from: m.key.remoteJid,
-                command: cmd,
-                fromSelf: m.key.fromMe
-            });
-        });
-    } catch (err) {
-        connectionStatus = 'error';
-        qrCodeData = null;
-        console.error('[WA-BOT] Connection error:', err);
+        // Show startup banner
+        logger.showBanner();
+        logger.showStartupInfo();
+        logger.separator();
         
-        retryCount++;
-        if (retryCount >= maxRetries) {
-            console.error('[WA-BOT] Max retries reached. Exiting.');
-            setTimeout(() => process.exit(1), 1000);
-        } else {
-            isConnecting = false;
-            setTimeout(connectToWhatsApp, config.reconnectDelay ?? 5000);
-        }
-    } finally {
-        isConnecting = false;
+        // Create bot instance
+        whatsappBot = new WhatsAppBot();
+        
+        // Set QR callback to update web interface
+        whatsappBot.setQRCallback((qr) => {
+            qrCodeData = qr;
+            lastQRUpdate = new Date().toISOString();
+            connectionStatus = 'qr_ready';
+            logger.qrGenerated();
+        });
+
+        // Set connection status callback
+        whatsappBot.setConnectionStatusCallback((status, botInfo = null) => {
+            connectionStatus = status;
+            if (botInfo) {
+                botId = botInfo.id;
+                currentPresence = botInfo.presence || 'available';
+            }
+            if (status === 'connected') {
+                qrCodeData = null;
+                logger.connected('WhatsApp');
+            } else if (status === 'disconnected') {
+                qrCodeData = null;
+                logger.disconnected('WhatsApp');
+            }
+        });
+
+        // Start bot connection
+        logger.starting('WhatsApp Bot');
+        await whatsappBot.connect();
+        
+    } catch (error) {
+        logger.error('Failed to initialize bot', { error: error.message });
+        setTimeout(() => process.exit(1), 1000);
     }
 }
 
-// Add error handler
-process.on('unhandledRejection', error => {
-    console.log('[WA-BOT] Unhandled rejection:', error);
+app.listen(PORT, '0.0.0.0', () => {
+    logger.info(`Health server running on port ${PORT}`, { port: PORT });
+    
+    // Initialize bot after server starts
+    initializeBot();
 });
 
-// Start with error handling
-connectToWhatsApp().catch(err => {
-    console.error('[WA-BOT] Fatal error:', err);
-    process.exit(1);
+// Add error handler
+process.on('unhandledRejection', error => {
+    logger.error('Unhandled rejection', { error: error.message });
 });
+
+// Start keep-alive service
+if (RENDER_URL) {
+    keepAliveService.start();
+    logger.info('Keep-alive service started', { url: RENDER_URL, interval: KEEP_ALIVE_INTERVAL });
+}

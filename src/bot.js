@@ -15,10 +15,15 @@ class WhatsAppBot {
         this.qrShowing = false;
         this.qrCallback = null;
         this.connectionTimeout = null;
+        this.connectionStatusCallback = null;
     }
 
     setQRCallback(callback) {
         this.qrCallback = callback;
+    }
+
+    setConnectionStatusCallback(callback) {
+        this.connectionStatusCallback = callback;
     }
 
     cleanup() {

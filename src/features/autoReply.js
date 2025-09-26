@@ -9,19 +9,15 @@ class AutoReply {
 
     setupDefaultReplies() {
         const defaultReplies = {
-            'hi': 'Hello! 👋 How can I help you today?',
-            'hello': 'Hi there! 👋 Need any assistance?',
+            'hi': 'Hello! 👋',
             'good morning': 'Good morning! 🌅 Have a great day!',
+            'gm': 'Good morning! 🌅 Have a great day!',
             'good afternoon': 'Good afternoon! 🌞 Hope you\'re having a good day!',
             'good evening': 'Good evening! 🌆 Hope you had a great day!',
             'good night': 'Good night! 🌙 Sweet dreams!',
+            'gn': 'Good night! 🌙 Sweet dreams!',
             'thank you': 'You\'re welcome! 😊',
             'thanks': 'You\'re welcome! 😊',
-            'help': 'Need help? Use *.panel* to see available commands!',
-            'menu': 'To see the full menu of commands, type *.panel*',
-            'how are you': 'I\'m doing great! Thanks for asking. How can I help you?',
-            'what\'s up': 'Just here to help! What can I do for you?',
-            'bot': 'Yes, I\'m CloudNextra Bot! How can I assist you today? (Note: Auto-replies work in private chats only)'
         };
 
         for (const [trigger, response] of Object.entries(defaultReplies)) {
