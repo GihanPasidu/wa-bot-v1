@@ -31,7 +31,7 @@ RUN npm install --omit=dev
 COPY . .
 
 # Create directories for auth data and downloads
-RUN mkdir -p auth_info downloads/youtube downloads/status
+RUN mkdir -p auth_info downloads/youtube
 
 # Expose port
 EXPOSE $PORT

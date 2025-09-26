@@ -100,11 +100,6 @@ The bot includes a powerful **YouTube video download** feature with **zero bot s
 | Command | Description |
 |---------|-------------|
 | `.info` | Show bot information and statistics |
-| `.autoview` | Toggle auto-view for status updates |
-| `.download [ContactName] [number]` | Download status posts from specific contact or all |
-| `.statuslist [ContactName]` | List available status posts (all or from specific contact) |
-| `.contacts` | Show all contacts with available status posts |
-| `.clearstatus` | Clear the status download queue |
 | `.online` | Set presence to online |
 | `.offline` | Set presence to offline |
 

@@ -12,8 +12,6 @@ services:
         sync: false
       - key: AUTO_READ_STATUS
         value: "false"
-      - key: STATUS_DOWNLOAD
-        value: "true"
       - key: PORT
         value: "10000"
       - key: RENDER_EXTERNAL_URL

@@ -4,13 +4,11 @@ require('./polyfill');
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, downloadMediaMessage, getContentType } = require('@whiskeysockets/baileys');
 const fs = require('fs');
 const path = require('path');
-const os = require('os');
 const { Boom } = require('@hapi/boom');
 const config = require('./config');
 const express = require('express');
 const QRCode = require('qrcode');
 const KeepAliveService = require('./keep-alive');
-const ytdl = require('ytdl-core');
 
 // Express app for health checks
 const app = express();
@@ -31,15 +29,6 @@ let currentSock = null;
 let retryCount = 0;
 let botId = null;
 const maxRetries = config.reconnectAttempts ?? 5;
-
-// Auto-view status functionality
-let autoViewEnabled = process.env.AUTO_VIEW_STATUS === 'true' || false;
-let viewedStatusCount = 0;
-
-// Status download functionality
-let statusDownloadEnabled = process.env.STATUS_DOWNLOAD === 'true' || true;
-let downloadedStatusCount = 0;
-let availableStatusPosts = new Map(); // Store available status posts for download
 
 // Presence tracking
 let currentPresence = 'available'; // Default to online
@@ -62,11 +51,6 @@ app.get('/health', (req, res) => {
         uptime: process.uptime(),
         botConnected: !!currentSock,
         connectionStatus: connectionStatus,
-        autoView: autoViewEnabled,
-        viewedStatusCount: viewedStatusCount,
-        statusDownload: statusDownloadEnabled,
-        downloadedStatusCount: downloadedStatusCount,
-        availableStatusCount: availableStatusPosts.size,
         keepAliveEnabled: !!RENDER_URL,
         memoryUsage: process.memoryUsage()
     });
@@ -130,11 +114,6 @@ app.get('/status', (req, res) => {
     res.json({
         connected: !!currentSock && connectionStatus === 'connected',
         status: connectionStatus,
-        autoView: autoViewEnabled,
-        viewedStatusCount: viewedStatusCount,
-        statusDownload: statusDownloadEnabled,
-        downloadedStatusCount: downloadedStatusCount,
-        availableStatusCount: availableStatusPosts.size,
         presence: currentPresence,
         uptime: Math.floor(process.uptime()),
         botId: botId,
@@ -302,24 +281,8 @@ app.get('/', (req, res) => {
                         <span id="uptime">${Math.floor(process.uptime())} seconds</span>
                     </div>
                     <div class="info-item">
-                        <strong>Auto View</strong><br>
-                        <span id="autoview">${autoViewEnabled ? '✅ Enabled' : '❌ Disabled'}</span>
-                    </div>
-                    <div class="info-item">
-                        <strong>Viewed Status</strong><br>
-                        <span id="viewed-count">${viewedStatusCount}</span>
-                    </div>
-                    <div class="info-item">
                         <strong>Presence</strong><br>
                         <span id="presence">${currentPresence === 'available' ? '🟢 Online' : '🔴 Offline'}</span>
-                    </div>
-                    <div class="info-item">
-                        <strong>Downloaded</strong><br>
-                        <span id="downloaded-count">${downloadedStatusCount}</span>
-                    </div>
-                    <div class="info-item">
-                        <strong>Available</strong><br>
-                        <span id="available-count">${availableStatusPosts.size}</span>
                     </div>
                 </div>
 
@@ -345,19 +308,11 @@ app.get('/', (req, res) => {
                         const statusSection = document.getElementById('status-section');
                         const qrSection = document.getElementById('qr-section');
                         const uptimeSpan = document.getElementById('uptime');
-                        const autoviewSpan = document.getElementById('autoview');
-                        const viewedCountSpan = document.getElementById('viewed-count');
                         const presenceSpan = document.getElementById('presence');
-                        const downloadedCountSpan = document.getElementById('downloaded-count');
-                        const availableCountSpan = document.getElementById('available-count');
                         
-                        // Update uptime and autoview status
+                        // Update uptime status
                         uptimeSpan.textContent = data.uptime + ' seconds';
-                        autoviewSpan.textContent = data.autoView ? '✅ Enabled' : '❌ Disabled';
-                        viewedCountSpan.textContent = data.viewedStatusCount || 0;
                         presenceSpan.textContent = data.presence === 'available' ? '🟢 Online' : '🔴 Offline';
-                        downloadedCountSpan.textContent = data.downloadedStatusCount || 0;
-                        availableCountSpan.textContent = data.availableStatusCount || 0;
                         
                         if (data.connected) {
                             statusSection.innerHTML = '<div class="status online">🟢 Connected to WhatsApp</div>';
@@ -440,98 +395,6 @@ process.on('SIGINT', () => {
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`[WA-BOT] Health server running on port ${PORT}`);
 });
-
-// Helper functions for status download functionality
-function createDownloadDirectory() {
-    const statusDir = path.join(__dirname, 'downloads', 'status');
-    if (!fs.existsSync(statusDir)) {
-        fs.mkdirSync(statusDir, { recursive: true });
-        console.log('[WA-BOT] Created status download directory:', statusDir);
-    }
-    return statusDir;
-}
-
-function cleanOldStatusPosts() {
-    // Clean status posts older than 24 hours (WhatsApp status duration)
-    const now = Date.now();
-    const oneDayMs = 24 * 60 * 60 * 1000;
-    
-    for (const [key, status] of availableStatusPosts.entries()) {
-        if (now - status.timestamp > oneDayMs) {
-            availableStatusPosts.delete(key);
-        }
-    }
-    
-    console.log(`[WA-BOT] Cleaned old status posts. Available: ${availableStatusPosts.size}`);
-}
-
-function addStatusPost(message, senderInfo) {
-    const statusKey = `${message.key.id}_${message.key.remoteJid}`;
-    const messageType = getContentType(message.message);
-    
-    // Store status post info for later download
-    availableStatusPosts.set(statusKey, {
-        key: message.key,
-        messageType: messageType,
-        sender: senderInfo.pushName || senderInfo.notify || 'Unknown',
-        senderId: message.key.participant || message.key.remoteJid,
-        timestamp: Date.now(),
-        message: message.message
-    });
-    
-    // Clean old posts periodically
-    if (availableStatusPosts.size % 10 === 0) {
-        cleanOldStatusPosts();
-    }
-    
-    console.log(`[WA-BOT] Added status post from ${senderInfo.pushName || 'Unknown'}. Total available: ${availableStatusPosts.size}`);
-}
-
-async function downloadStatusPost(sock, statusInfo, downloadDir) {
-    try {
-        const fileName = `status_${statusInfo.sender.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}`;
-        let filePath;
-        let success = false;
-
-        if (statusInfo.messageType === 'imageMessage') {
-            const buffer = await downloadMediaMessage(
-                { key: statusInfo.key, message: statusInfo.message },
-                'buffer',
-                {},
-                { logger: console, reuploadRequest: sock.updateMediaMessage }
-            );
-            filePath = path.join(downloadDir, `${fileName}.jpg`);
-            fs.writeFileSync(filePath, buffer);
-            success = true;
-        } else if (statusInfo.messageType === 'videoMessage') {
-            const buffer = await downloadMediaMessage(
-                { key: statusInfo.key, message: statusInfo.message },
-                'buffer',
-                {},
-                { logger: console, reuploadRequest: sock.updateMediaMessage }
-            );
-            filePath = path.join(downloadDir, `${fileName}.mp4`);
-            fs.writeFileSync(filePath, buffer);
-            success = true;
-        } else if (statusInfo.messageType === 'extendedTextMessage' || statusInfo.messageType === 'conversation') {
-            const text = statusInfo.message.extendedTextMessage?.text || statusInfo.message.conversation || '';
-            filePath = path.join(downloadDir, `${fileName}.txt`);
-            fs.writeFileSync(filePath, `Status from: ${statusInfo.sender}\nTime: ${new Date(statusInfo.timestamp).toLocaleString()}\n\n${text}`);
-            success = true;
-        }
-
-        if (success) {
-            downloadedStatusCount++;
-            console.log(`[WA-BOT] Downloaded status post: ${path.basename(filePath)}`);
-            return filePath;
-        }
-        
-        return null;
-    } catch (error) {
-        console.error('[WA-BOT] Error downloading status post:', error);
-        return null;
-    }
-}
 
 async function connectToWhatsApp() {
     // avoid parallel connects
@@ -689,282 +552,10 @@ async function connectToWhatsApp() {
 
             // Only respond to commands from self
             if (!isCommand || !m.key.fromMe) {
-                // Handle status posts (not regular messages)
-                if (!m.key.fromMe && m.key.remoteJid === 'status@broadcast') {
-                    // Track status post for potential download
-                    if (statusDownloadEnabled) {
-                        addStatusPost(m, { pushName: m.pushName, notify: m.key.participant });
-                    }
-                    
-                    // Auto-view status functionality - only for status updates, not regular messages
-                    if (autoViewEnabled) {
-                        try {
-                            // Automatically view WhatsApp status updates
-                            await sock.readMessages([m.key]);
-                            viewedStatusCount++; // Increment the counter
-                            console.log('[WA-BOT] ✅ Auto-viewed status update from:', m.pushName || 'Unknown');
-                        } catch (e) {
-                            console.error('[WA-BOT] Auto-view error:', e);
-                        }
-                    }
-                }
                 return;
             }
 
             try {
-                // Handle .autoview command
-                if (cmd === 'autoview') {
-                    autoViewEnabled = !autoViewEnabled;
-                    const statusText = autoViewEnabled ? 'enabled' : 'disabled';
-                    const emoji = autoViewEnabled ? '✅' : '❌';
-                    const replyText = `${emoji} Auto View Status has been *${statusText}*
-
-👀 *Auto View Feature:*
-${autoViewEnabled ? '✅ Will automatically view WhatsApp status updates' : '❌ Will NOT automatically view status updates'}
-
-💡 This feature automatically marks status updates as viewed, similar to when you open WhatsApp and see status updates.`;
-                    await sock.sendMessage(m.key.remoteJid, { text: replyText }, { quoted: m });
-                    return;
-                }
-
-                // Handle .download command for status posts
-                if (cmd === 'download') {
-                    if (availableStatusPosts.size === 0) {
-                        await sock.sendMessage(m.key.remoteJid, { 
-                            text: '📭 *No Status Posts Available*\n\nNo status posts are currently available for download. Status posts appear here when contacts post them.' 
-                        }, { quoted: m });
-                        return;
-                    }
-
-                    const downloadDir = createDownloadDirectory();
-                    let downloadCount = 0;
-                    let maxDownloads = 5;
-                    let targetContact = null;
-                    
-                    // Parse arguments: .download ContactName or .download ContactName 3 or .download 5
-                    const argParts = args.trim().split(/\s+/);
-                    
-                    if (argParts.length > 0 && argParts[0]) {
-                        // Check if first argument is a number (old behavior: .download 5)
-                        if (!isNaN(argParts[0])) {
-                            maxDownloads = Math.min(parseInt(argParts[0]), 10);
-                        } else {
-                            // First argument is contact name
-                            targetContact = argParts[0].toLowerCase();
-                            // Second argument might be number
-                            if (argParts[1] && !isNaN(argParts[1])) {
-                                maxDownloads = Math.min(parseInt(argParts[1]), 10);
-                            }
-                        }
-                    }
-
-                    // Filter posts by contact if specified
-                    let filteredPosts = Array.from(availableStatusPosts.values());
-                    
-                    if (targetContact) {
-                        filteredPosts = filteredPosts.filter(status => 
-                            status.sender.toLowerCase().includes(targetContact) ||
-                            status.senderId.includes(targetContact)
-                        );
-                        
-                        if (filteredPosts.length === 0) {
-                            // Show available contacts
-                            const contacts = [...new Set(Array.from(availableStatusPosts.values()).map(s => s.sender))];
-                            await sock.sendMessage(m.key.remoteJid, { 
-                                text: `❌ *Contact Not Found*\n\nNo status posts found for: "${targetContact}"\n\n👥 *Available Contacts:*\n${contacts.slice(0, 10).map(c => `• ${c}`).join('\n')}${contacts.length > 10 ? `\n... and ${contacts.length - 10} more` : ''}\n\n💡 *Usage:* \`${prefix}download ContactName [number]\`` 
-                            }, { quoted: m });
-                            return;
-                        }
-                        
-                        await sock.sendMessage(m.key.remoteJid, { 
-                            text: `📥 *Starting Download*\n\nDownloading up to ${maxDownloads} status posts from *${filteredPosts[0].sender}*...\n\n⏳ Please wait...` 
-                        }, { quoted: m });
-                    } else {
-                        await sock.sendMessage(m.key.remoteJid, { 
-                            text: `📥 *Starting Download*\n\nDownloading up to ${maxDownloads} status posts from all contacts...\n\n⏳ Please wait...` 
-                        }, { quoted: m });
-                    }
-
-                    // Sort by timestamp (newest first) and download
-                    const sortedPosts = filteredPosts
-                        .sort((a, b) => b.timestamp - a.timestamp)
-                        .slice(0, maxDownloads);
-
-                    for (const statusInfo of sortedPosts) {
-                        const filePath = await downloadStatusPost(sock, statusInfo, downloadDir);
-                        if (filePath) {
-                            downloadCount++;
-                        }
-                    }
-
-                    const downloadText = `✅ *Download Complete*
-
-📊 *Results:*
-• Downloaded: ${downloadCount} status posts${targetContact ? ` from *${filteredPosts[0]?.sender || targetContact}*` : ''}
-• Failed: ${sortedPosts.length - downloadCount}
-• Available from ${targetContact ? 'contact' : 'all contacts'}: ${filteredPosts.length}
-• Download Location: downloads/status/`;
-
-                    await sock.sendMessage(m.key.remoteJid, { text: downloadText }, { quoted: m });
-                    return;
-                }
-
-                // Handle .statuslist command
-                if (cmd === 'statuslist' || cmd === 'liststatus') {
-                    if (availableStatusPosts.size === 0) {
-                        await sock.sendMessage(m.key.remoteJid, { 
-                            text: '📭 *No Status Posts Available*\n\nNo status posts are currently tracked for download.' 
-                        }, { quoted: m });
-                        return;
-                    }
-
-                    // Check if filtering by specific contact
-                    const targetContact = args.trim().toLowerCase();
-                    let filteredPosts = Array.from(availableStatusPosts.values());
-                    
-                    if (targetContact) {
-                        filteredPosts = filteredPosts.filter(status => 
-                            status.sender.toLowerCase().includes(targetContact) ||
-                            status.senderId.includes(targetContact)
-                        );
-                        
-                        if (filteredPosts.length === 0) {
-                            const contacts = [...new Set(Array.from(availableStatusPosts.values()).map(s => s.sender))];
-                            await sock.sendMessage(m.key.remoteJid, { 
-                                text: `❌ *Contact Not Found*\n\nNo status posts found for: "${args.trim()}"\n\n👥 *Available Contacts:*\n${contacts.slice(0, 10).map(c => `• ${c}`).join('\n')}${contacts.length > 10 ? `\n... and ${contacts.length - 10} more` : ''}\n\n💡 *Usage:* \`${prefix}statuslist ContactName\`` 
-                            }, { quoted: m });
-                            return;
-                        }
-                    }
-
-                    if (targetContact) {
-                        // Show posts from specific contact
-                        let listText = `📋 *Status Posts from ${filteredPosts[0]?.sender || targetContact}*\n\n`;
-                        listText += `Total: ${filteredPosts.length} posts\n\n`;
-
-                        const sortedPosts = filteredPosts
-                            .sort((a, b) => b.timestamp - a.timestamp)
-                            .slice(0, 15); // Show more for specific contact
-
-                        sortedPosts.forEach((status, index) => {
-                            const timeAgo = Math.floor((Date.now() - status.timestamp) / (1000 * 60));
-                            const mediaType = status.messageType.includes('image') ? '🖼️' : 
-                                             status.messageType.includes('video') ? '🎥' : '📝';
-                            listText += `${index + 1}. ${mediaType} ${timeAgo} min ago\n`;
-                        });
-
-                        if (filteredPosts.length > 15) {
-                            listText += `\n... and ${filteredPosts.length - 15} more posts`;
-                        }
-
-                        listText += `\n\n💡 Use \`${prefix}download ${targetContact}\` to download these posts`;
-                        
-                        await sock.sendMessage(m.key.remoteJid, { text: listText }, { quoted: m });
-                        return;
-                    } else {
-                        // Group posts by contact and show summary
-                        const postsByContact = new Map();
-                        
-                        Array.from(availableStatusPosts.values()).forEach(status => {
-                            if (!postsByContact.has(status.sender)) {
-                                postsByContact.set(status.sender, []);
-                            }
-                            postsByContact.get(status.sender).push(status);
-                        });
-
-                        let listText = `📋 *Available Status Posts by Contact*\n\n`;
-                        listText += `Total: ${availableStatusPosts.size} posts from ${postsByContact.size} contacts\n\n`;
-
-                        // Sort contacts by most recent post
-                        const sortedContacts = Array.from(postsByContact.entries())
-                            .sort((a, b) => Math.max(...b[1].map(p => p.timestamp)) - Math.max(...a[1].map(p => p.timestamp)))
-                            .slice(0, 12); // Show top 12 contacts
-
-                        sortedContacts.forEach(([contact, posts], index) => {
-                            const latestPost = posts.sort((a, b) => b.timestamp - a.timestamp)[0];
-                            const timeAgo = Math.floor((Date.now() - latestPost.timestamp) / (1000 * 60));
-                            const mediaTypes = posts.map(p => 
-                                p.messageType.includes('image') ? '🖼️' : 
-                                p.messageType.includes('video') ? '🎥' : '📝'
-                            ).slice(0, 3).join('');
-                            
-                            listText += `${index + 1}. *${contact}* (${posts.length} posts)\n   ${mediaTypes}${posts.length > 3 ? '...' : ''} • ${timeAgo} min ago\n\n`;
-                        });
-
-                        if (postsByContact.size > 12) {
-                            listText += `... and ${postsByContact.size - 12} more contacts\n\n`;
-                        }
-
-                        listText += `💡 *Usage Examples:*\n`;
-                        listText += `• \`${prefix}statuslist ContactName\` - View specific contact's posts\n`;
-                        listText += `• \`${prefix}download ContactName\` - Download from specific contact`;
-                        
-                        await sock.sendMessage(m.key.remoteJid, { text: listText }, { quoted: m });
-                        return;
-                    }
-                }
-
-                // Handle .contacts command
-                if (cmd === 'contacts') {
-                    if (availableStatusPosts.size === 0) {
-                        await sock.sendMessage(m.key.remoteJid, { 
-                            text: '📭 *No Contacts with Status*\n\nNo status posts are currently available from any contacts.' 
-                        }, { quoted: m });
-                        return;
-                    }
-
-                    // Group posts by contact
-                    const postsByContact = new Map();
-                    Array.from(availableStatusPosts.values()).forEach(status => {
-                        if (!postsByContact.has(status.sender)) {
-                            postsByContact.set(status.sender, []);
-                        }
-                        postsByContact.get(status.sender).push(status);
-                    });
-
-                    let contactsText = `👥 *Contacts with Available Status*\n\n`;
-                    contactsText += `Total: ${postsByContact.size} contacts with ${availableStatusPosts.size} posts\n\n`;
-
-                    // Sort contacts by most recent post and most posts
-                    const sortedContacts = Array.from(postsByContact.entries())
-                        .sort((a, b) => {
-                            const aLatest = Math.max(...a[1].map(p => p.timestamp));
-                            const bLatest = Math.max(...b[1].map(p => p.timestamp));
-                            return bLatest - aLatest; // Most recent first
-                        });
-
-                    sortedContacts.forEach(([contact, posts], index) => {
-                        const latestPost = posts.sort((a, b) => b.timestamp - a.timestamp)[0];
-                        const timeAgo = Math.floor((Date.now() - latestPost.timestamp) / (1000 * 60));
-                        const mediaCount = {
-                            images: posts.filter(p => p.messageType.includes('image')).length,
-                            videos: posts.filter(p => p.messageType.includes('video')).length,
-                            texts: posts.filter(p => !p.messageType.includes('image') && !p.messageType.includes('video')).length
-                        };
-                        
-                        contactsText += `${index + 1}. *${contact}*\n`;
-                        contactsText += `   📊 ${posts.length} posts (🖼️${mediaCount.images} 🎥${mediaCount.videos} 📝${mediaCount.texts})\n`;
-                        contactsText += `   📅 Latest: ${timeAgo} min ago\n\n`;
-                    });
-
-                    contactsText += `💡 *Usage Examples:*\n`;
-                    contactsText += `• \`${prefix}download ContactName\` - Download from specific contact\n`;
-                    contactsText += `• \`${prefix}statuslist ContactName\` - View contact's posts`;
-                    
-                    await sock.sendMessage(m.key.remoteJid, { text: contactsText }, { quoted: m });
-                    return;
-                }
-
-                // Handle .clearstatus command
-                if (cmd === 'clearstatus') {
-                    const count = availableStatusPosts.size;
-                    availableStatusPosts.clear();
-                    await sock.sendMessage(m.key.remoteJid, { 
-                        text: `🗑️ *Status List Cleared*\n\nRemoved ${count} status posts from download queue.` 
-                    }, { quoted: m });
-                    return;
-                }
-
                 // Handle .info command
                 if (cmd === 'info') {
                     const uptimeSeconds = Math.floor(process.uptime());
@@ -983,22 +574,10 @@ ${autoViewEnabled ? '✅ Will automatically view WhatsApp status updates' : '❌
 • Presence: ${currentPresence === 'available' ? '🟢 Online' : '🔴 Offline'}
 • Uptime: ${uptimeFormatted}
 
-⚙️ *Features:*
-• Auto View Status: ${autoViewEnabled ? '✅ Enabled' : '❌ Disabled'}
-• Status Download: ${statusDownloadEnabled ? '✅ Enabled' : '❌ Disabled'}
-• Viewed Status Count: ${viewedStatusCount}
-• Downloaded Status Count: ${downloadedStatusCount}
-• Available for Download: ${availableStatusPosts.size}
-
 🛠️ *Available Commands:*
 • ${prefix}info - Show bot information
 • ${prefix}online - Set presence to online
 • ${prefix}offline - Set presence to offline
-• ${prefix}autoview - Toggle auto-view for status updates
-• ${prefix}statuslist - List available status posts
-• ${prefix}download [ContactName] - Download status posts
-• ${prefix}youtube [URL] - Download YouTube videos
-• ${prefix}yt [URL] - Download YouTube videos (short)
 `;
                     await sock.sendMessage(m.key.remoteJid, { text: infoText }, { quoted: m });
                     return;
@@ -1040,215 +619,10 @@ ${autoViewEnabled ? '✅ Will automatically view WhatsApp status updates' : '❌
                     return;
                 }
 
-                // Handle .youtube command
-                if (cmd === 'youtube' || cmd === 'yt') {
-                    if (!args.trim()) {
-                        await sock.sendMessage(m.key.remoteJid, { 
-                            text: `📺 *YouTube Video Download*\n\n❌ Please provide a YouTube URL\n\n💡 *Usage:*\n\`${prefix}youtube [YouTube URL]\`\n\`${prefix}yt [YouTube URL]\`\n\n📋 *Example:*\n\`${prefix}youtube https://www.youtube.com/watch?v=example\`` 
-                        }, { quoted: m });
-                        return;
-                    }
-
-                    const url = args.trim();
-                    
-                    // Validate YouTube URL
-                    if (!ytdl.validateURL(url)) {
-                        await sock.sendMessage(m.key.remoteJid, { 
-                            text: `❌ *Invalid YouTube URL*\n\nPlease provide a valid YouTube video URL.\n\n💡 *Example:*\n\`${prefix}youtube https://www.youtube.com/watch?v=example\`` 
-                        }, { quoted: m });
-                        return;
-                    }
-
-                    try {
-                        // Send processing message
-                        await sock.sendMessage(m.key.remoteJid, { 
-                            text: '⏳ *Processing YouTube Download...*\n\nPlease wait while I download the video for you.' 
-                        }, { quoted: m });
-
-                        // Get video info with timeout
-                        const info = await Promise.race([
-                            ytdl.getInfo(url),
-                            new Promise((_, reject) => 
-                                setTimeout(() => reject(new Error('Request timeout')), 30000)
-                            )
-                        ]);
-
-                        const videoTitle = info.videoDetails.title || 'Unknown Title';
-                        const videoDuration = parseInt(info.videoDetails.lengthSeconds) || 0;
-                        const videoAuthor = info.videoDetails.author?.name || 'Unknown Author';
-
-                        // Check if video is available
-                        if (!info.videoDetails || info.videoDetails.isLiveContent) {
-                            await sock.sendMessage(m.key.remoteJid, { 
-                                text: '❌ *Download Failed*\n\nThis video cannot be downloaded (might be live content, private, or unavailable).' 
-                            }, { quoted: m });
-                            return;
-                        }
-
-                        // Check duration (limit to 10 minutes for free hosting)
-                        if (videoDuration > 600) {
-                            await sock.sendMessage(m.key.remoteJid, { 
-                                text: `❌ *Video Too Long*\n\nVideo duration: ${Math.floor(videoDuration / 60)}:${(videoDuration % 60).toString().padStart(2, '0')}\n\nMaximum allowed: 10:00 minutes\n\nPlease try a shorter video.` 
-                            }, { quoted: m });
-                            return;
-                        }
-
-                        // Generate temporary filename for immediate transfer
-                        const timestamp = Date.now();
-                        const tempFileName = `temp_youtube_${timestamp}.mp4`;
-                        const tempFilePath = path.join(os.tmpdir(), tempFileName);
-
-                        // Find best available format
-                        let format = ytdl.chooseFormat(info.formats, { 
-                            quality: 'highestvideo',
-                            filter: format => format.container === 'mp4' && format.hasVideo && format.hasAudio
-                        });
-
-                        // Fallback to any mp4 format if the above doesn't work
-                        if (!format) {
-                            format = ytdl.chooseFormat(info.formats, { 
-                                quality: 'highest',
-                                filter: 'mp4'
-                            });
-                        }
-
-                        // Last fallback to any available format
-                        if (!format) {
-                            format = ytdl.chooseFormat(info.formats, { quality: 'lowest' });
-                        }
-
-                        if (!format) {
-                            await sock.sendMessage(m.key.remoteJid, { 
-                                text: '❌ *Download Failed*\n\nNo suitable video format found. Please try a different video.' 
-                            }, { quoted: m });
-                            return;
-                        }
-
-                        // Stream download to temporary file with size monitoring
-                        const videoStream = ytdl(url, { format: format });
-                        const writeStream = fs.createWriteStream(tempFilePath);
-                        
-                        let downloadedSize = 0;
-                        const maxSizeBytes = 64 * 1024 * 1024; // 64MB limit
-
-                        // Monitor download size
-                        videoStream.on('data', (chunk) => {
-                            downloadedSize += chunk.length;
-                            if (downloadedSize > maxSizeBytes) {
-                                writeStream.destroy();
-                                videoStream.destroy();
-                                try {
-                                    if (fs.existsSync(tempFilePath)) {
-                                        fs.unlinkSync(tempFilePath);
-                                    }
-                                } catch (e) {}
-                                throw new Error('File size exceeded 64MB limit');
-                            }
-                        });
-
-                        await new Promise((resolve, reject) => {
-                            videoStream.pipe(writeStream);
-                            writeStream.on('finish', resolve);
-                            writeStream.on('error', (error) => {
-                                try {
-                                    if (fs.existsSync(tempFilePath)) {
-                                        fs.unlinkSync(tempFilePath);
-                                    }
-                                } catch (e) {}
-                                reject(error);
-                            });
-                            videoStream.on('error', (error) => {
-                                try {
-                                    if (fs.existsSync(tempFilePath)) {
-                                        fs.unlinkSync(tempFilePath);
-                                    }
-                                } catch (e) {}
-                                reject(error);
-                            });
-                        });
-
-                        // Check final file size
-                        const stats = fs.statSync(tempFilePath);
-                        const fileSizeInMB = stats.size / (1024 * 1024);
-
-                        if (fileSizeInMB > 64) {
-                            // Delete the file and inform user
-                            fs.unlinkSync(tempFilePath);
-                            await sock.sendMessage(m.key.remoteJid, { 
-                                text: `❌ *File Too Large*\n\nVideo size: ${fileSizeInMB.toFixed(1)}MB\nMaximum allowed: 64MB\n\nPlease try a shorter or lower quality video.` 
-                            }, { quoted: m });
-                            return;
-                        }
-
-                        // Send video info
-                        const durationFormatted = `${Math.floor(videoDuration / 60)}:${(videoDuration % 60).toString().padStart(2, '0')}`;
-                        const videoInfo = `📺 *YouTube Video*\n\n🎬 *Title:* ${videoTitle}\n👤 *Channel:* ${videoAuthor}\n⏱️ *Duration:* ${durationFormatted}\n📁 *Size:* ${fileSizeInMB.toFixed(1)}MB\n\n🔥 *Sent directly to your WhatsApp - No storage on bot!*`;
-
-                        // Send the video file directly and immediately delete
-                        const videoBuffer = fs.readFileSync(tempFilePath);
-                        
-                        // Delete temp file immediately after reading
-                        try {
-                            fs.unlinkSync(tempFilePath);
-                            console.log(`[WA-BOT] Temporary file deleted: ${tempFileName}`);
-                        } catch (error) {
-                            console.error('[WA-BOT] Error deleting temp file:', error);
-                        }
-
-                        // Send to WhatsApp
-                        await sock.sendMessage(m.key.remoteJid, {
-                            video: videoBuffer,
-                            caption: videoInfo,
-                            mimetype: 'video/mp4'
-                        }, { quoted: m });
-
-                        console.log(`[WA-BOT] YouTube video streamed and sent (no storage): ${videoTitle}`);
-
-                    } catch (error) {
-                        console.error('[WA-BOT] YouTube download error:', error);
-                        
-                        // Clean up any temporary files that might exist
-                        try {
-                            const tempFiles = fs.readdirSync(os.tmpdir()).filter(file => file.startsWith('temp_youtube_'));
-                            tempFiles.forEach(file => {
-                                const filePath = path.join(os.tmpdir(), file);
-                                try {
-                                    fs.unlinkSync(filePath);
-                                    console.log(`[WA-BOT] Cleaned up temp file: ${file}`);
-                                } catch (e) {
-                                    // Ignore cleanup errors
-                                }
-                            });
-                        } catch (e) {
-                            // Ignore cleanup errors
-                        }
-                        
-                        let errorMessage = '❌ *Download Failed*\n\n';
-                        if (error.message.includes('Video unavailable')) {
-                            errorMessage += 'The video is unavailable or private.';
-                        } else if (error.message.includes('age-restricted')) {
-                            errorMessage += 'The video is age-restricted and cannot be downloaded.';
-                        } else if (error.message.includes('private')) {
-                            errorMessage += 'The video is private and cannot be accessed.';
-                        } else if (error.message.includes('size exceeded')) {
-                            errorMessage += 'The video file is too large. Please try a shorter video.';
-                        } else if (error.message.includes('timeout')) {
-                            errorMessage += 'Download timeout. Please try again or use a different video.';
-                        } else {
-                            errorMessage += 'An error occurred while downloading the video. Please try again or use a different video.';
-                        }
-
-                        await sock.sendMessage(m.key.remoteJid, { 
-                            text: errorMessage 
-                        }, { quoted: m });
-                    }
-                    return;
-                }
-
                 // Unknown command
                 if (cmd) {
                     await sock.sendMessage(m.key.remoteJid, { 
-                        text: `❓ Unknown command: *${cmd}*\n\n🛠️ *Available Commands:*\n• ${prefix}info - Show bot information\n• ${prefix}autoview - Toggle auto-view for status updates\n• ${prefix}download [ContactName] [number] - Download status posts\n• ${prefix}statuslist [ContactName] - List available status posts\n• ${prefix}contacts - Show contacts with status posts\n• ${prefix}clearstatus - Clear status download queue\n• ${prefix}online - Set presence to online\n• ${prefix}offline - Set presence to offline\n• ${prefix}youtube [URL] - Download YouTube videos\n• ${prefix}yt [URL] - Download YouTube videos (short)` 
+                        text: `❓ Unknown command: *${cmd}*\n\n🛠️ *Available Commands:*\n• ${prefix}info - Show bot information\n• ${prefix}online - Set presence to online\n• ${prefix}offline - Set presence to offline` 
                     }, { quoted: m });
                 }
 
