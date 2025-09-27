@@ -9,8 +9,7 @@ class ControlPanel {
         this.config = {
             autoRead: false,
             antiCall: false,
-            autoReply: true, // Enable auto-reply by default
-            aiReply: true  // AI reply enabled by default
+            autoReply: true // Enable auto-reply by default
         };
 
         // Enable auto-reply system by default
@@ -20,8 +19,7 @@ class ControlPanel {
         console.log('[CONTROL] Control panel initialized with config:', {
             autoRead: this.config.autoRead,
             antiCall: this.config.antiCall,
-            autoReply: this.config.autoReply,
-            aiReply: this.config.aiReply
+            autoReply: this.config.autoReply
         });
 
         // Pre-cache both menu and thumbnail
@@ -92,10 +90,6 @@ class ControlPanel {
             ['.anticall', () => {
                 this.config.antiCall = !this.config.antiCall;
                 return `📵 Anti call has been ${this.config.antiCall ? 'enabled ✅\nBot will now reject all calls' : 'disabled ❌\nBot will allow calls'}`;
-            }],
-            ['.aireply', () => {
-                this.config.aiReply = !this.config.aiReply;
-                return `🤖 AI Reply has been ${this.config.aiReply ? 'enabled ✅\nBot will forward private messages to ChatGPT' : 'disabled ❌\nBot will not use AI replies'}`;
             }]
         ]);
 
@@ -159,10 +153,6 @@ class ControlPanel {
                     this.autoReply.clearReplies();
                     response = '🗑️ All auto-replies have been cleared';
                     break;
-                case '.aistatus':
-                    // This will be implemented by the message handler to show AI status
-                    response = '🤖 Use the message handler to check AI status';
-                    break;
                 default:
                     return;
             }
@@ -218,12 +208,6 @@ class ControlPanel {
             '*⚙️ Configuration:*', 
             '▫️ .autoread - Toggle status viewing',
             '▫️ .anticall - Toggle call blocking',
-            '▫️ .aireply - Toggle AI reply system',
-            '',
-            '*🤖 AI Features:*',
-            '▫️ Send any message in private chat when AI is enabled',
-            '▫️ .aistatus - Show AI system status',
-            '▫️ Messages are forwarded to ChatGPT automatically',
             '',
             '*🔄 Auto-Reply (Private Chats Only):*',
             '▫️ .autoreply - Toggle auto-reply system',
@@ -254,14 +238,12 @@ class ControlPanel {
             `│ ${this.getStatusEmoji('autoRead')} 👁️ Auto Status View`,
             `│ ${this.getStatusEmoji('antiCall')} 📵 Anti Call Protection`, 
             `│ ${this.getStatusEmoji('autoReply')} 💬 Auto Reply (Private Only)`,
-            `│ ${this.getStatusEmoji('aiReply')} 🤖 AI Reply (Private Only)`,
             '│',
             '│ ⌨️ *Quick Commands*',
             '│ • 📋 .panel  - Show this menu',
             '│ • 👁️ .autoread - Toggle status viewing',
             '│ • 📵 .anticall - Toggle call blocking', 
             '│ • 💬 .autoreply - Toggle auto-reply (private chats)',
-            '│ • 🤖 .aireply - Toggle AI reply system',
             '│ • 🖼️ .s     - Create sticker',
             '│ • ❔ .help   - Show detailed help',
             '│',
@@ -281,8 +263,7 @@ class ControlPanel {
             '.autoread', '.anticall',
             '.sticker', // Keep .sticker as control command
             '.autoreply', '.addreply', '.delreply',
-            '.listreplies', '.clearreplies',
-            '.aireply', '.aistatus'
+            '.listreplies', '.clearreplies'
         ];
         const command = msg.toLowerCase().split(' ')[0];
         // Don't treat .s as control command to allow sticker processing
