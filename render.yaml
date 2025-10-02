@@ -1,23 +1,24 @@
 services:
   - type: web
-    name: cloudnextra-wa-bot
-    env: docker
-    dockerfilePath: ./Dockerfile
+    name: whatsapp-bot-v2
+    env: node
     plan: free
-    region: oregon
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
-      - key: SESSION_ID
-        sync: false
-      - key: AUTO_READ_STATUS
-        value: "false"
       - key: PORT
-        value: "10000"
+        value: 10000
       - key: RENDER_EXTERNAL_URL
-        value: https://cloudnextra-wa-bot.onrender.com
+        value: https://wa-bot-v2-5f7s.onrender.com
+      # Auth backup environment variables (managed by bot)
+      - key: BAILEYS_CREDS_BACKUP
+        sync: false
+      - key: BAILEYS_KEYS_BACKUP
+        sync: false
+      - key: BAILEYS_BACKUP_TIMESTAMP
+        sync: false
+    autoDeploy: true
     healthCheckPath: /health
-    disk:
-      name: wa-bot-storage
-      mountPath: /app/auth_info
-      sizeGB: 1

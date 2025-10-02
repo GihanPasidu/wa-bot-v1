@@ -1,51 +1,36 @@
 {
-  "name": "cloudnextra-wa-bot",
-  "version": "1.0.0",
-  "description": "Advanced WhatsApp Bot with Auto-Reply, Stickers, Control Panel, and More by CloudNextra",
-  "main": "index.js",
+  "name": "cloudnextra-bot",
+  "version": "2.0.0",
+  "description": "CloudNextra Bot - Advanced WhatsApp Bot with comprehensive features",
+  "main": "bot.js",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js",
-    "docker:build": "docker build -t cloudnextra-wa-bot .",
-    "docker:run": "docker run -p 10000:10000 cloudnextra-wa-bot",
-    "docker:deploy": "npm run docker:build && npm run docker:run",
-    "clean": "rm -rf auth_info",
-    "reset": "rm -rf auth_info && npm start",
-    "test": "echo \"No tests specified\" && exit 0"
+    "start": "node bot.js",
+    "dev": "nodemon bot.js",
+    "build": "echo 'No build step required'",
+    "postinstall": "echo 'Dependencies installed successfully'"
   },
   "keywords": [
+    "cloudnextra",
     "whatsapp",
     "bot",
-    "baileys",
-    "cloudnextra",
-    "render",
-    "docker",
-    "auto-reply",
-    "stickers",
-    "control-panel",
     "automation",
-    "messaging",
-    "chatbot"
+    "qr-code",
+    "baileys"
   ],
-  "author": "CloudNextra",
-  "license": "Apache-2.0",
+  "author": "CloudNextra Solutions",
+  "license": "MIT",
   "dependencies": {
-    "@hapi/boom": "^10.0.1",
-    "@whiskeysockets/baileys": "^7.0.0-rc.3",
-    "crypto-browserify": "^3.12.0",
-    "express": "^4.19.2",
-    "qrcode": "^1.5.3",
-    "qrcode-terminal": "^0.12.0",
-    "ytdl-core": "^4.11.5",
-    "chalk": "^4.1.2",
-    "sharp": "^0.33.0",
-    "pino": "^8.19.0"
+    "@whiskeysockets/baileys": "^6.6.0",
+    "axios": "^1.11.0",
+    "pino": "^9.0.0",
+    "qrcode": "^1.5.4",
+    "qrcode-terminal": "^0.12.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9"
-  },
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=8.0.0"
+    "nodemon": "^1.4.1"
   }
 }

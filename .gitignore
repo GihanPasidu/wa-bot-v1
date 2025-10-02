@@ -1,31 +1,54 @@
-# Authentication
-auth_info/
-*.env
-.env
-config.env
-session.json
+# WhatsApp Bot Authentication Data
+auth/
 
-# Downloads
-downloads/
-
-# Logs
-*.log
+# Node.js dependencies
+node_modules/
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
 
 # Runtime data
 pids
 *.pid
 *.seed
+*.pid.lock
 
-# Dependency directories
-node_modules/
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
 
-# Optional npm cache directory
-.npm
+# Logs
+logs
+*.log
 
-# Optional eslint cache
-.eslintcache
+# Temporary files
+.tmp/
+temp/
 
-# OS files
+# Operating System Files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build output
+dist/
+build/

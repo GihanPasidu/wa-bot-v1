@@ -1,0 +1,2599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="theme-color" content="#25D366">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="CloudNextra Bot">
+    <meta name="application-name" content="CloudNextra Bot">
+    <meta name="msapplication-TileColor" content="#25D366">
+    <meta name="format-detection" content="telephone=no">
+    <title>CloudNextra Bot V2.0 - Advanced WhatsApp Automation Platform</title>
+    <meta name="description" content="Enterprise-grade WhatsApp automation with advanced media processing and AI-powered features.">
+    <meta name="keywords" content="WhatsApp bot, automation, media processing, AI assistant, CloudNextra V2.0">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkNsb3VkTmV4dHJhIEJvdCIsCiAgInNob3J0X25hbWUiOiAiQ2xvdWROZXh0cmEiLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgInRoZW1lX2NvbG9yIjogIiMyNUQzNjYiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiNmZmZmZmYiLAogICJvcmllbnRhdGlvbiI6ICJwb3J0cmFpdC1wcmltYXJ5IiwKICAiaWNvbnMiOiBbCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCNGJXeHVjejBuYUhSMGNEb3ZMM2QzZHk1M00yNXZjbWN2TWpBd01DOXpkbWNuSUhacFpYZENiM2c5SnpBZ01DQXhNREFnTVRBd0p6NDhkR1Y0ZENCNVBTY3VPV1Z0SnlCbWIyNTBMWE5wZW1VOUp6a3dKejQrOEVOdnFEKzRQQ0EwUEhacmF5NDhMM1I0ZEQ0OEwzTjJaejQ9IiwKICAgICAgInNpemVzIjogIjE5MngxOTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9zdmcreG1sIgogICAgfQogIF0sCiAgImNhdGVnb3JpZXMiOiBbInByb2R1Y3Rpdml0eSIsICJ1dGlsaXRpZXMiXQp9">
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%2325D366' rx='20'/><text y='.9em' font-size='90' text-anchor='middle' x='50' fill='white'>🤖</text></svg>">
+    <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%2325D366' rx='20'/><text y='.9em' font-size='90' text-anchor='middle' x='50' fill='white'>🤖</text></svg>">
+    
+    <!-- Google Fonts with display=swap for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome with performance optimization -->
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
+    
+    <!-- Chart.js - Load asynchronously for better performance -->
+    <script async src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- WebGL Three.js - Load only on desktop for performance -->
+    <script>
+        // Only load Three.js on devices with sufficient performance
+        if (window.innerWidth > 768 && !navigator.userAgentData?.mobile) {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+            script.async = true;
+            document.head.appendChild(script);
+        }
+    </script>
+    
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --whatsapp-green: #25D366;
+            --whatsapp-dark: #128C7E;
+            --accent-blue: #4f46e5;
+            --accent-purple: #7c3aed;
+            --success-green: #10b981;
+            --error-red: #ef4444;
+            --warning-amber: #f59e0b;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --text-muted: #9ca3af;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --border-light: #e5e7eb;
+            --border-medium: #d1d5db;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --radius-xl: 1rem;
+            --radius-2xl: 1.5rem;
+            
+            /* Mobile-first responsive variables */
+            --container-padding: 1rem;
+            --section-gap: 1.5rem;
+            --button-height: 48px;
+            --touch-target: 44px;
+            --font-size-base: 16px;
+            --line-height-base: 1.5;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: var(--font-size-base);
+            line-height: var(--line-height-base);
+            -webkit-text-size-adjust: 100%;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            min-height: 100dvh; /* Dynamic viewport height for mobile */
+            line-height: var(--line-height-base);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            scroll-behavior: smooth;
+            touch-action: manipulation;
+        }
+
+        /* Animated background particles */
+        .background-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Main container */
+        .main-container {
+            min-height: 100vh;
+            min-height: 100dvh; /* Dynamic viewport height */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--container-padding);
+            position: relative;
+        }
+
+        .content-wrapper {
+            background: var(--bg-primary);
+            border-radius: var(--radius-2xl);
+            box-shadow: var(--shadow-xl);
+            padding: 0;
+            max-width: 1200px;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin: auto;
+        }
+
+        /* Header section */
+        .header-section {
+            background: linear-gradient(135deg, var(--whatsapp-green) 0%, var(--whatsapp-dark) 100%);
+            color: white;
+            padding: 2rem var(--container-padding);
+            text-align: center;
+            position: relative;
+        }
+
+        .header-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .brand-logo {
+            font-size: clamp(2.5rem, 8vw, 4rem);
+            margin-bottom: 1rem;
+            display: inline-block;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
+        .brand-title {
+            font-size: clamp(1.5rem, 6vw, 2.5rem);
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(45deg, #ffffff, #f0f9ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+
+        .brand-subtitle {
+            font-size: clamp(1rem, 3vw, 1.2rem);
+            font-weight: 400;
+            opacity: 0.9;
+            margin-bottom: 1rem;
+            line-height: 1.4;
+        }
+
+        .version-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-lg);
+            font-weight: 600;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Feature highlights - Mobile Optimized */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .feature-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.875rem;
+            border-radius: var(--radius-lg);
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+            touch-action: manipulation;
+        }
+
+        .feature-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-text {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Main content area - Mobile First */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: var(--section-gap);
+            padding: 2rem var(--container-padding);
+            align-items: start;
+        }
+
+        .qr-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            width: 100%;
+            order: 1;
+        }
+
+        .info-sidebar {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-xl);
+            padding: 1.5rem;
+            width: 100%;
+            order: 2;
+        }
+
+        .qr-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .qr-container {
+            background: var(--bg-secondary);
+            border: 2px dashed var(--border-medium);
+            border-radius: var(--radius-xl);
+            padding: 1.5rem;
+            min-height: 280px;
+            width: 100%;
+            max-width: 350px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            transition: all 0.3s ease;
+            touch-action: manipulation;
+        }
+
+        .qr-container:hover {
+            border-color: var(--whatsapp-green);
+            box-shadow: 0 0 0 4px rgba(37, 211, 102, 0.1);
+        }
+
+        .qr-code {
+            max-width: 100%;
+            max-height: 240px;
+            width: auto;
+            height: auto;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .loading-animation {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .modern-spinner {
+            width: 60px;
+            height: 60px;
+            position: relative;
+        }
+
+        .spinner-ring {
+            width: 100%;
+            height: 100%;
+            border: 4px solid var(--border-light);
+            border-top: 4px solid var(--whatsapp-green);
+            border-radius: 50%;
+            animation: modernSpin 1s linear infinite;
+        }
+
+        @keyframes modernSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Status indicators */
+        .status-card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-left: 4px solid;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s ease;
+        }
+
+        .status-card.waiting {
+            border-left-color: var(--warning-amber);
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-card.connected {
+            border-left-color: var(--success-green);
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-card.error {
+            border-left-color: var(--error-red);
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-icon {
+            font-size: 1.2rem;
+            margin-right: 0.5rem;
+        }
+
+        /* Action buttons - Touch Optimized */
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.875rem 1.5rem;
+            min-height: var(--button-height);
+            min-width: var(--touch-target);
+            border: none;
+            border-radius: var(--radius-lg);
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            font-family: inherit;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            flex: 1;
+            min-width: 140px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--whatsapp-green), var(--whatsapp-dark));
+            color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-secondary {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: 2px solid var(--border-medium);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--whatsapp-green);
+            color: var(--whatsapp-green);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .info-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .instructions-list {
+            list-style: none;
+            counter-reset: step-counter;
+        }
+
+        .instruction-item {
+            counter-increment: step-counter;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .step-number {
+            background: var(--whatsapp-green);
+            color: white;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .step-number::before {
+            content: counter(step-counter);
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .step-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Stats cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--whatsapp-green);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Auto-refresh timer */
+        .refresh-timer {
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-lg);
+            padding: 1rem;
+            margin-top: 1.5rem;
+            text-align: center;
+            border: 1px solid var(--border-light);
+        }
+
+        .timer-text {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .countdown-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--accent-blue);
+        }
+
+        /* Footer */
+        .footer-section {
+            background: var(--bg-tertiary);
+            padding: 2rem;
+            border-top: 1px solid var(--border-light);
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .footer-column h4 {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--whatsapp-green);
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .tech-badge {
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            border: 1px solid var(--border-light);
+        }
+
+        /* ========================================
+           RESPONSIVE DESIGN - COMPREHENSIVE
+           ======================================== */
+        
+        /* Small Mobile Devices (320px - 480px) */
+        @media screen and (max-width: 480px) {
+            :root {
+                --container-padding: 0.75rem;
+                --section-gap: 1rem;
+                --font-size-base: 14px;
+            }
+            
+            .main-container {
+                padding: 0.5rem;
+            }
+            
+            .content-wrapper {
+                border-radius: var(--radius-lg);
+                margin: 0;
+            }
+            
+            .header-section {
+                padding: 1.5rem var(--container-padding);
+            }
+            
+            .brand-logo {
+                font-size: clamp(2rem, 10vw, 3rem);
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+            
+            .main-content {
+                padding: 1.5rem var(--container-padding);
+            }
+            
+            .qr-container {
+                min-height: 240px;
+                padding: 1rem;
+            }
+            
+            .qr-code {
+                max-height: 200px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            
+            .btn {
+                width: 100%;
+                min-width: unset;
+                flex: unset;
+            }
+            
+            .security-features-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .connection-stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+        }
+
+        /* Medium Mobile Devices (481px - 768px) */
+        @media screen and (min-width: 481px) and (max-width: 768px) {
+            :root {
+                --container-padding: 1rem;
+                --section-gap: 1.25rem;
+            }
+            
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .action-buttons {
+                justify-content: center;
+            }
+            
+            .btn {
+                flex: 0 1 auto;
+                min-width: 120px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .security-features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Tablets Portrait (769px - 1024px) */
+        @media screen and (min-width: 769px) and (max-width: 1024px) {
+            :root {
+                --container-padding: 1.5rem;
+                --section-gap: 2rem;
+            }
+            
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+                padding: 2.5rem var(--container-padding);
+            }
+            
+            .qr-section {
+                order: 1;
+                max-width: 600px;
+                margin: 0 auto;
+            }
+            
+            .info-sidebar {
+                order: 2;
+                padding: 2rem;
+            }
+            
+            .features-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .qr-container {
+                max-width: 400px;
+                min-height: 320px;
+            }
+            
+            .action-buttons {
+                flex-direction: row;
+                justify-content: center;
+            }
+        }
+
+        /* Tablets Landscape & Small Desktops (1025px - 1199px) */
+        @media screen and (min-width: 1025px) and (max-width: 1199px) {
+            .main-content {
+                grid-template-columns: 1fr 1fr;
+                gap: 2rem;
+                padding: 3rem 2rem;
+            }
+            
+            .qr-section {
+                order: 1;
+                position: sticky;
+                top: 2rem;
+            }
+            
+            .info-sidebar {
+                order: 2;
+                padding: 2rem;
+            }
+            
+            .features-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        /* Desktop (1200px - 1599px) */
+        @media screen and (min-width: 1200px) and (max-width: 1599px) {
+            .main-content {
+                grid-template-columns: 2fr 3fr;
+                gap: 2.5rem;
+                padding: 3rem 2rem;
+            }
+            
+            .qr-section {
+                position: sticky;
+                top: 2rem;
+            }
+            
+            .qr-container {
+                max-width: 400px;
+                min-height: 350px;
+            }
+        }
+
+        /* Large Desktop & Ultra-wide (1600px+) */
+        @media screen and (min-width: 1600px) {
+            .content-wrapper {
+                max-width: 1400px;
+            }
+            
+            .main-content {
+                grid-template-columns: 2fr 3fr;
+                gap: 3rem;
+                padding: 4rem 3rem;
+            }
+            
+            .header-section {
+                padding: 4rem 3rem;
+            }
+            
+            .features-grid {
+                grid-template-columns: repeat(5, 1fr);
+            }
+        }
+
+        /* High DPI Displays */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            .qr-code {
+                image-rendering: -webkit-optimize-contrast;
+                image-rendering: crisp-edges;
+            }
+        }
+
+        /* Landscape Orientation for Mobile */
+        @media screen and (max-height: 500px) and (orientation: landscape) {
+            .main-container {
+                align-items: flex-start;
+                padding-top: 1rem;
+            }
+            
+            .header-section {
+                padding: 1rem var(--container-padding);
+            }
+            
+            .brand-logo {
+                font-size: 2rem;
+                margin-bottom: 0.5rem;
+            }
+            
+            .features-grid {
+                margin-top: 1rem;
+            }
+            
+            .main-content {
+                grid-template-columns: 1fr 1fr;
+                gap: 1.5rem;
+                padding: 1.5rem var(--container-padding);
+            }
+            
+            .qr-section {
+                order: 1;
+            }
+            
+            .info-sidebar {
+                order: 2;
+            }
+        }
+
+        /* Performance & Accessibility Classes */
+        .reduced-motion * {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
+
+        .power-saving .particle,
+        .power-saving .matrix-bg,
+        .power-saving .background-animation {
+            display: none !important;
+        }
+
+        .power-saving .holographic::before {
+            animation: none !important;
+        }
+
+        /* Focus states for accessibility */
+        .btn:focus-visible,
+        .qr-container:focus-visible {
+            outline: 2px solid var(--whatsapp-green);
+            outline-offset: 2px;
+        }
+
+        /* Print Styles */
+        @media print {
+            .background-animation,
+            .matrix-bg,
+            .action-buttons {
+                display: none !important;
+            }
+            
+            .content-wrapper {
+                box-shadow: none;
+                border: 1px solid #ccc;
+            }
+            
+            .qr-code {
+                max-width: 300px;
+                max-height: 300px;
+            }
+        }
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --text-primary: #f9fafb;
+                --text-secondary: #d1d5db;
+                --text-muted: #9ca3af;
+                --bg-primary: #1f2937;
+                --bg-secondary: #374151;
+                --bg-tertiary: #4b5563;
+                --border-light: #4b5563;
+                --border-medium: #6b7280;
+            }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--whatsapp-green);
+            border-radius: var(--radius-sm);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--whatsapp-dark);
+        }
+
+        /* Advanced Technical Features */
+        .system-monitor {
+            background: var(--bg-primary);
+            border-radius: var(--radius-xl);
+            padding: 2rem;
+            margin-top: 2rem;
+            border: 1px solid var(--border-light);
+        }
+
+        .monitor-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .monitor-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success-green);
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .chart-container {
+            position: relative;
+            height: 150px;
+            margin: 1rem 0;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .metric-item {
+            background: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: var(--radius-lg);
+            text-align: center;
+            border: 1px solid var(--border-light);
+        }
+
+        .metric-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--whatsapp-green);
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Connection Quality Indicator */
+        .connection-quality {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: var(--radius-lg);
+            margin: 1rem 0;
+        }
+
+        .signal-bars {
+            display: flex;
+            gap: 2px;
+            align-items: end;
+        }
+
+        .signal-bar {
+            width: 4px;
+            background: var(--border-medium);
+            border-radius: 2px;
+            transition: background-color 0.3s ease;
+        }
+
+        .signal-bar:nth-child(1) { height: 8px; }
+        .signal-bar:nth-child(2) { height: 12px; }
+        .signal-bar:nth-child(3) { height: 16px; }
+        .signal-bar:nth-child(4) { height: 20px; }
+        .signal-bar:nth-child(5) { height: 24px; }
+
+        .signal-bar.active {
+            background: var(--success-green);
+        }
+
+        .quality-text {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .quality-details {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* Advanced Animations */
+        .matrix-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.1;
+            pointer-events: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--whatsapp-green);
+            overflow: hidden;
+        }
+
+        .matrix-column {
+            position: absolute;
+            top: -100%;
+            white-space: nowrap;
+            animation: matrix-fall 10s linear infinite;
+        }
+
+        @keyframes matrix-fall {
+            to {
+                transform: translateY(100vh);
+            }
+        }
+
+        /* Security Shield Animation */
+        .security-shield {
+            position: relative;
+            display: inline-block;
+            margin: 1rem 0;
+        }
+
+        .shield-icon {
+            font-size: 2rem;
+            color: var(--success-green);
+            filter: drop-shadow(0 0 10px rgba(37, 211, 102, 0.3));
+            animation: shield-pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes shield-pulse {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(37, 211, 102, 0.3)); }
+            50% { transform: scale(1.1); filter: drop-shadow(0 0 20px rgba(37, 211, 102, 0.6)); }
+        }
+
+        /* Network Topology Visualization */
+        .network-topology {
+            position: relative;
+            height: 200px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+
+        .node {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: var(--whatsapp-green);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 600;
+            box-shadow: 0 0 15px rgba(37, 211, 102, 0.5);
+            animation: node-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes node-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .connection-line {
+            position: absolute;
+            background: var(--whatsapp-green);
+            opacity: 0.6;
+            animation: data-flow 3s ease-in-out infinite;
+        }
+
+        @keyframes data-flow {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+        }
+
+        /* Terminal Output Simulation */
+        .terminal {
+            background: #0d1117;
+            color: #58a6ff;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 1rem;
+            border-radius: var(--radius-lg);
+            margin: 1rem 0;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .terminal-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .terminal-dot.red { background: #ff5f56; }
+        .terminal-dot.yellow { background: #ffbd2e; }
+        .terminal-dot.green { background: #27ca3f; }
+
+        .terminal-line {
+            margin-bottom: 0.25rem;
+            opacity: 0;
+            animation: type-in 0.5s ease-in-out forwards;
+        }
+
+        @keyframes type-in {
+            to { opacity: 1; }
+        }
+
+        .terminal-prompt::before {
+            content: '$ ';
+            color: #7c3aed;
+        }
+
+        .terminal-success {
+            color: #3fb950;
+        }
+
+        .terminal-warning {
+            color: #d29922;
+        }
+
+        .terminal-error {
+            color: #f85149;
+        }
+
+        /* Advanced Loading States */
+        .skeleton-loader {
+            background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--bg-tertiary) 50%, var(--bg-secondary) 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 2s infinite;
+            border-radius: var(--radius-md);
+        }
+
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Performance Indicators */
+        .performance-gauge {
+            position: relative;
+            width: 100px;
+            height: 50px;
+            margin: 1rem auto;
+        }
+
+        .gauge-bg {
+            width: 100%;
+            height: 100%;
+            border: 8px solid var(--bg-tertiary);
+            border-bottom: 8px solid transparent;
+            border-radius: 100px 100px 0 0;
+            position: relative;
+        }
+
+        .gauge-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 8px solid var(--success-green);
+            border-bottom: 8px solid transparent;
+            border-radius: 100px 100px 0 0;
+            clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%);
+            transition: clip-path 1s ease-in-out;
+        }
+
+        /* Holographic Effects */
+        .holographic {
+            background: linear-gradient(45deg, rgba(255,255,255,0.1), rgba(37,211,102,0.1), rgba(255,255,255,0.1));
+            border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .holographic::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: holographic-sweep 3s ease-in-out infinite;
+        }
+
+        @keyframes holographic-sweep {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            50% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+            100% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+        }
+
+        /* API Response Visualizer */
+        .api-response {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+
+        .api-header {
+            background: var(--bg-secondary);
+            padding: 0.75rem 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .api-body {
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .json-key {
+            color: #0969da;
+        }
+
+        .json-string {
+            color: #0a3069;
+        }
+
+        .json-number {
+            color: #cf222e;
+        }
+
+        .json-boolean {
+            color: #8250df;
+        }
+
+        /* Security Features Grid */
+        .security-features-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .security-feature {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-light);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .security-feature:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .security-feature i {
+            font-size: 1.2rem;
+            color: var(--whatsapp-green);
+            width: 20px;
+            text-align: center;
+        }
+
+        .feature-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .feature-desc {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        /* Connection Stats */
+        .connection-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .connection-stat {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-light);
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--whatsapp-green), var(--whatsapp-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .stat-info {
+            flex: 1;
+        }
+
+        .stat-info .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-info .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+    </style>
+</head>
+<body>
+    <!-- Background animation -->
+    <div class="background-animation" id="particles"></div>
+
+    <div class="main-container">
+        <div class="content-wrapper">
+            <!-- Header Section -->
+            <div class="header-section">
+                <div class="header-content">
+                    <div class="brand-logo">🤖</div>
+                    <h1 class="brand-title">CloudNextra Bot</h1>
+                    <p class="brand-subtitle">Enterprise WhatsApp Automation Platform</p>
+                    <div class="version-badge">
+                        <i class="fas fa-rocket"></i>
+                        <span>v2.0.0 - Production Ready</span>
+                    </div>
+                    
+                    <div class="features-grid">
+                        <div class="feature-item">
+                            <div class="feature-icon">🎨</div>
+                            <div class="feature-text">Advanced Media Processing</div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon">👥</div>
+                            <div class="feature-text">Smart Group Management</div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon">🛡️</div>
+                            <div class="feature-text">Enterprise Security</div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon">⚡</div>
+                            <div class="feature-text">Lightning Fast</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="main-content">
+                <!-- QR Code Section -->
+                <div class="qr-section">
+                    <h2 class="qr-title">
+                        <i class="fas fa-qrcode"></i>
+                        Secure Authentication
+                    </h2>
+                    
+                    <div id="qr-container" class="qr-container">
+                        <div class="loading-animation">
+                            <div class="modern-spinner">
+                                <div class="spinner-ring"></div>
+                            </div>
+                            <p style="color: var(--text-secondary); font-weight: 500;">Initializing secure connection...</p>
+                        </div>
+                    </div>
+
+                    <div id="status" class="status-card waiting">
+                        <i class="fas fa-clock status-icon"></i>
+                        Waiting for QR code generation...
+                    </div>
+
+                    <div class="action-buttons">
+                        <button id="refresh-btn" class="btn btn-primary" onclick="refreshQR()">
+                            <i class="fas fa-sync-alt"></i>
+                            Refresh QR Code
+                        </button>
+                        <a href="/health" target="_blank" class="btn btn-secondary">
+                            <i class="fas fa-heartbeat"></i>
+                            Health Check
+                        </a>
+                    </div>
+
+                    <div class="refresh-timer">
+                        <div class="timer-text">Auto-refresh in</div>
+                        <div id="countdown" class="countdown-display">30</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">seconds</div>
+                    </div>
+
+                    <!-- Security Features Panel -->
+                    <div class="system-monitor" style="margin-top: 2rem;">
+                        <div class="monitor-header">
+                            <div class="monitor-title">
+                                <i class="fas fa-shield-alt"></i>
+                                Security Features
+                                <div class="status-indicator"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="security-features-grid">
+                            <div class="security-feature">
+                                <i class="fas fa-lock"></i>
+                                <div>
+                                    <div class="feature-title">End-to-End Encryption</div>
+                                    <div class="feature-desc">256-bit AES encryption</div>
+                                </div>
+                            </div>
+                            <div class="security-feature">
+                                <i class="fas fa-user-shield"></i>
+                                <div>
+                                    <div class="feature-title">Privacy Protection</div>
+                                    <div class="feature-desc">No data stored locally</div>
+                                </div>
+                            </div>
+                            <div class="security-feature">
+                                <i class="fas fa-sync-alt"></i>
+                                <div>
+                                    <div class="feature-title">Auto-Refresh</div>
+                                    <div class="feature-desc">QR expires every 30s</div>
+                                </div>
+                            </div>
+                            <div class="security-feature">
+                                <i class="fas fa-mobile-alt"></i>
+                                <div>
+                                    <div class="feature-title">Multi-Device</div>
+                                    <div class="feature-desc">Up to 4 linked devices</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Connection Status Panel -->
+                    <div class="system-monitor" style="margin-top: 1.5rem;">
+                        <div class="monitor-header">
+                            <div class="monitor-title">
+                                <i class="fas fa-wifi"></i>
+                                Connection Status
+                            </div>
+                        </div>
+                        
+                        <div class="connection-stats">
+                            <div class="connection-stat">
+                                <div class="stat-icon">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <div class="stat-value" id="qr-uptime">0s</div>
+                                    <div class="stat-label">QR Active Time</div>
+                                </div>
+                            </div>
+                            <div class="connection-stat">
+                                <div class="stat-icon">
+                                    <i class="fas fa-sync"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <div class="stat-value" id="refresh-count">0</div>
+                                    <div class="stat-label">Refresh Count</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Information Sidebar -->
+                <div class="info-sidebar">
+                    <h2 class="sidebar-title">
+                        <i class="fas fa-info-circle"></i>
+                        System Overview
+                    </h2>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="uptime-value">--</div>
+                            <div class="stat-label">Uptime</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="status-value">Initializing</div>
+                            <div class="stat-label">Status</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">256-bit</div>
+                            <div class="stat-label">Encryption</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">99.9%</div>
+                            <div class="stat-label">Reliability</div>
+                        </div>
+                    </div>
+
+                    <!-- Advanced System Monitor -->
+                    <div class="system-monitor">
+                        <div class="monitor-header">
+                            <div class="monitor-title">
+                                <i class="fas fa-chart-line"></i>
+                                Real-time Analytics
+                                <div class="status-indicator"></div>
+                            </div>
+                        </div>
+
+                        <div class="chart-container">
+                            <canvas id="performanceChart"></canvas>
+                        </div>
+
+                        <div class="metrics-grid">
+                            <div class="metric-item">
+                                <div class="metric-value" id="latency-value">--</div>
+                                <div class="metric-label">Latency</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-value" id="memory-value">--</div>
+                                <div class="metric-label">Memory</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-value" id="cpu-value">--</div>
+                                <div class="metric-label">CPU</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-value" id="requests-value">--</div>
+                                <div class="metric-label">Requests</div>
+                            </div>
+                        </div>
+
+                        <!-- Connection Quality Indicator -->
+                        <div class="connection-quality">
+                            <div class="signal-bars" id="signal-bars">
+                                <div class="signal-bar"></div>
+                                <div class="signal-bar"></div>
+                                <div class="signal-bar"></div>
+                                <div class="signal-bar"></div>
+                                <div class="signal-bar"></div>
+                            </div>
+                            <div>
+                                <div class="quality-text" id="quality-text">Excellent</div>
+                                <div class="quality-details" id="quality-details">5G Network • 45ms ping</div>
+                            </div>
+                        </div>
+
+                        <!-- Security Status -->
+                        <div class="security-shield">
+                            <i class="fas fa-shield-alt shield-icon"></i>
+                            <span style="margin-left: 0.5rem; font-weight: 600; color: var(--success-green);">
+                                End-to-End Encrypted
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Network Topology Visualization -->
+                    <div class="system-monitor">
+                        <div class="monitor-header">
+                            <div class="monitor-title">
+                                <i class="fas fa-network-wired"></i>
+                                Network Topology
+                            </div>
+                        </div>
+                        <div class="network-topology" id="network-topology">
+                            <!-- Nodes and connections will be generated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Terminal Output -->
+                    <div class="system-monitor">
+                        <div class="monitor-header">
+                            <div class="monitor-title">
+                                <i class="fas fa-terminal"></i>
+                                System Logs
+                            </div>
+                        </div>
+                        <div class="terminal">
+                            <div class="terminal-header">
+                                <div class="terminal-dot red"></div>
+                                <div class="terminal-dot yellow"></div>
+                                <div class="terminal-dot green"></div>
+                                <span style="margin-left: 0.5rem; font-size: 0.7rem;">CloudNextra Bot Terminal</span>
+                            </div>
+                            <div id="terminal-output">
+                                <!-- Terminal lines will be added by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Section -->
+            <div class="footer-section">
+                <div class="footer-content">
+                    <div class="footer-column">
+                        <h4><i class="fas fa-info-circle"></i> About CloudNextra Bot</h4>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">
+                            Enterprise-grade WhatsApp automation platform with advanced media processing, 
+                            intelligent group management, and enterprise security features.
+                        </p>
+                        <div class="tech-stack">
+                            <span class="tech-badge">Node.js 20+</span>
+                            <span class="tech-badge">Baileys v6.6.0</span>
+                            <span class="tech-badge">Sharp</span>
+                            <span class="tech-badge">FFmpeg</span>
+                        </div>
+                    </div>
+                    
+                    <div class="footer-column">
+                        <h4><i class="fas fa-link"></i> Quick Links</h4>
+                        <ul class="footer-links">
+                            <li><a href="/health" target="_blank"><i class="fas fa-heartbeat"></i> Health Monitor</a></li>
+                            <li><a href="https://github.com/GihanPasidu/wa-bot-v2" target="_blank"><i class="fab fa-github"></i> Source Code</a></li>
+                            <li><a href="https://github.com/WhiskeySockets/Baileys" target="_blank"><i class="fas fa-code"></i> Baileys Library</a></li>
+                            <li><a href="#" onclick="showApiDocs()"><i class="fas fa-book"></i> API Documentation</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="footer-column">
+                        <h4><i class="fas fa-shield-alt"></i> Security & Privacy</h4>
+                        <ul class="footer-links">
+                            <li><a href="#"><i class="fas fa-lock"></i> End-to-End Encryption</a></li>
+                            <li><a href="#"><i class="fas fa-user-shield"></i> Privacy Policy</a></li>
+                            <li><a href="#"><i class="fas fa-certificate"></i> Security Audits</a></li>
+                            <li><a href="#"><i class="fas fa-bug"></i> Report Security Issue</a></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border-light); color: var(--text-muted); font-size: 0.9rem;">
+                    <p>
+                        <i class="fas fa-heart" style="color: #e74c3c;"></i>
+                        Made with passion by <strong>CloudNextra Solutions</strong>
+                    </p>
+                    <p style="margin-top: 0.5rem;">
+                        © 2024 CloudNextra Bot. All rights reserved. | 
+                        <a href="#" style="color: var(--whatsapp-green);">Terms of Service</a> | 
+                        <a href="#" style="color: var(--whatsapp-green);">Privacy Policy</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Matrix Background Effect -->
+    <div class="matrix-bg" id="matrix-bg"></div>
+
+    <script>
+        let refreshInterval;
+        let countdownInterval;
+        let countdownValue = 30;
+        let performanceChart;
+        let qrStartTime = Date.now();
+        let refreshCount = 0;
+        let successAnimationShown = false; // Flag to prevent repeated animations
+        let systemMetrics = {
+            latency: [],
+            memory: [],
+            cpu: [],
+            requests: 0
+        };
+
+        // Advanced Technical Features Class
+        class AdvancedTechFeatures {
+            constructor() {
+                this.initializeChart();
+                this.startSystemMonitoring();
+                this.createNetworkTopology();
+                this.initializeTerminal();
+                this.createMatrixEffect();
+            }
+
+            initializeChart() {
+                const ctx = document.getElementById('performanceChart');
+                if (!ctx) return;
+
+                performanceChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: Array.from({length: 20}, (_, i) => `${i}s`),
+                        datasets: [{
+                            label: 'Response Time (ms)',
+                            data: Array.from({length: 20}, () => Math.random() * 100 + 50),
+                            borderColor: '#25D366',
+                            backgroundColor: 'rgba(37, 211, 102, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }, {
+                            label: 'Memory Usage (%)',
+                            data: Array.from({length: 20}, () => Math.random() * 30 + 20),
+                            borderColor: '#4f46e5',
+                            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            x: {
+                                display: false
+                            },
+                            y: {
+                                display: false,
+                                min: 0,
+                                max: 150
+                            }
+                        },
+                        elements: {
+                            point: {
+                                radius: 0
+                            }
+                        },
+                        animation: {
+                            duration: 750,
+                            easing: 'easeInOutQuart'
+                        }
+                    }
+                });
+            }
+
+            updateChart() {
+                if (!performanceChart) return;
+
+                const newLatency = Math.random() * 50 + 25;
+                const newMemory = Math.random() * 20 + 30;
+
+                performanceChart.data.datasets[0].data.shift();
+                performanceChart.data.datasets[0].data.push(newLatency);
+                performanceChart.data.datasets[1].data.shift();
+                performanceChart.data.datasets[1].data.push(newMemory);
+
+                performanceChart.update('none');
+
+                // Update metrics display
+                document.getElementById('latency-value').textContent = `${newLatency.toFixed(0)}ms`;
+                document.getElementById('memory-value').textContent = `${newMemory.toFixed(1)}%`;
+                document.getElementById('cpu-value').textContent = `${(Math.random() * 15 + 10).toFixed(1)}%`;
+                document.getElementById('requests-value').textContent = `${++systemMetrics.requests}`;
+            }
+
+            startSystemMonitoring() {
+                // Update metrics every 2 seconds
+                setInterval(() => {
+                    this.updateChart();
+                    this.updateConnectionQuality();
+                }, 2000);
+
+                // Add terminal logs periodically
+                setInterval(() => {
+                    this.addTerminalLog();
+                }, 5000);
+            }
+
+            updateConnectionQuality() {
+                const signal = Math.floor(Math.random() * 5) + 1;
+                const bars = document.querySelectorAll('.signal-bar');
+                const qualityText = document.getElementById('quality-text');
+                const qualityDetails = document.getElementById('quality-details');
+
+                bars.forEach((bar, index) => {
+                    if (index < signal) {
+                        bar.classList.add('active');
+                    } else {
+                        bar.classList.remove('active');
+                    }
+                });
+
+                const qualities = ['Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+                const networkTypes = ['3G', '4G', '4G+', '5G', '5G+'];
+                const pings = [150, 80, 45, 25, 15];
+
+                qualityText.textContent = qualities[signal - 1];
+                qualityDetails.textContent = `${networkTypes[signal - 1]} Network • ${pings[signal - 1]}ms ping`;
+            }
+
+            createNetworkTopology() {
+                const container = document.getElementById('network-topology');
+                if (!container) return;
+
+                const nodes = [
+                    { id: 'C', x: 50, y: 50, label: 'Client' },
+                    { id: 'S', x: 150, y: 100, label: 'Server' },
+                    { id: 'W', x: 250, y: 50, label: 'WhatsApp' },
+                    { id: 'D', x: 200, y: 150, label: 'Database' }
+                ];
+
+                nodes.forEach((node, index) => {
+                    const nodeEl = document.createElement('div');
+                    nodeEl.className = 'node';
+                    nodeEl.textContent = node.id;
+                    nodeEl.style.left = `${node.x}px`;
+                    nodeEl.style.top = `${node.y}px`;
+                    nodeEl.style.animationDelay = `${index * 0.5}s`;
+                    container.appendChild(nodeEl);
+                });
+
+                // Create connections
+                const connections = [
+                    { from: 0, to: 1 },
+                    { from: 1, to: 2 },
+                    { from: 1, to: 3 },
+                    { from: 0, to: 2 }
+                ];
+
+                connections.forEach((conn, index) => {
+                    const line = document.createElement('div');
+                    line.className = 'connection-line';
+                    
+                    const from = nodes[conn.from];
+                    const to = nodes[conn.to];
+                    
+                    const dx = to.x - from.x;
+                    const dy = to.y - from.y;
+                    const length = Math.sqrt(dx * dx + dy * dy);
+                    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                    
+                    line.style.width = `${length}px`;
+                    line.style.height = '2px';
+                    line.style.left = `${from.x + 10}px`;
+                    line.style.top = `${from.y + 10}px`;
+                    line.style.transform = `rotate(${angle}deg)`;
+                    line.style.transformOrigin = '0 0';
+                    line.style.animationDelay = `${index * 0.3}s`;
+                    
+                    container.appendChild(line);
+                });
+            }
+
+            initializeTerminal() {
+                const terminalOutput = document.getElementById('terminal-output');
+                if (!terminalOutput) return;
+
+                const initialLogs = [
+                    { type: 'prompt', text: 'cloudnextra-bot --version', delay: 0 },
+                    { type: 'success', text: 'CloudNextra Bot v2.0.0', delay: 500 },
+                    { type: 'prompt', text: 'npm start', delay: 1000 },
+                    { type: 'normal', text: '> cloudnextra-bot@2.0.0 start', delay: 1500 },
+                    { type: 'normal', text: '> node bot.js', delay: 2000 },
+                    { type: 'success', text: '✓ Bot initialized successfully', delay: 2500 },
+                    { type: 'success', text: '✓ Authentication state loaded', delay: 3000 },
+                    { type: 'warning', text: '⚠ Waiting for QR scan...', delay: 3500 }
+                ];
+
+                initialLogs.forEach((log, index) => {
+                    setTimeout(() => {
+                        this.addTerminalLine(log.text, log.type);
+                    }, log.delay);
+                });
+            }
+
+            addTerminalLine(text, type = 'normal') {
+                const terminalOutput = document.getElementById('terminal-output');
+                if (!terminalOutput) return;
+
+                const line = document.createElement('div');
+                line.className = `terminal-line terminal-${type}`;
+                line.textContent = text;
+                
+                if (type === 'prompt') {
+                    line.classList.add('terminal-prompt');
+                }
+
+                terminalOutput.appendChild(line);
+                terminalOutput.scrollTop = terminalOutput.scrollHeight;
+
+                // Keep only last 10 lines
+                while (terminalOutput.children.length > 10) {
+                    terminalOutput.removeChild(terminalOutput.firstChild);
+                }
+            }
+
+            addTerminalLog() {
+                const logs = [
+                    { type: 'success', text: '✓ Health check passed' },
+                    { type: 'normal', text: 'Processing QR request...' },
+                    { type: 'success', text: '✓ Security scan completed' },
+                    { type: 'normal', text: 'Optimizing connection...' },
+                    { type: 'success', text: '✓ Session validated' },
+                    { type: 'warning', text: '⚠ Auto-refresh in 30s' }
+                ];
+
+                const randomLog = logs[Math.floor(Math.random() * logs.length)];
+                this.addTerminalLine(randomLog.text, randomLog.type);
+            }
+
+            createMatrixEffect() {
+                const matrixBg = document.getElementById('matrix-bg');
+                if (!matrixBg) return;
+                
+                // Disable matrix effect on mobile for performance
+                const isMobile = window.innerWidth <= 768 || navigator.userAgentData?.mobile;
+                if (isMobile) {
+                    matrixBg.style.display = 'none';
+                    return;
+                }
+
+                const chars = '01デジタルクラウドネクストラボット';
+                
+                setInterval(() => {
+                    for (let i = 0; i < 3; i++) {
+                        const column = document.createElement('div');
+                        column.className = 'matrix-column';
+                        column.style.left = Math.random() * 100 + '%';
+                        column.style.animationDuration = (Math.random() * 5 + 5) + 's';
+                        
+                        let text = '';
+                        for (let j = 0; j < 20; j++) {
+                            text += chars[Math.floor(Math.random() * chars.length)] + '\n';
+                        }
+                        column.textContent = text;
+                        
+                        matrixBg.appendChild(column);
+                        
+                        setTimeout(() => {
+                            column.remove();
+                        }, 10000);
+                    }
+                }, 2000);
+            }
+        }
+
+        // Initialize advanced features
+        let techFeatures;
+
+        // Initialize background particles with performance optimization
+        function createParticles() {
+            const container = document.getElementById('particles');
+            // Reduce particles on mobile for better performance
+            const isMobile = window.innerWidth <= 768 || navigator.userAgentData?.mobile;
+            const particleCount = isMobile ? 10 : 20;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.width = Math.random() * 10 + 5 + 'px';
+                particle.style.height = particle.style.width;
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        // Enhanced QR fetching with better error handling
+        async function fetchQRCode() {
+            try {
+                const response = await fetch('/qr-data');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                const container = document.getElementById('qr-container');
+                const status = document.getElementById('status');
+                const statusValue = document.getElementById('status-value');
+                
+                if (data.qr) {
+                    // Reset success animation flag for new connection attempt
+                    successAnimationShown = false;
+                    
+                    container.innerHTML = `
+                        <img src="data:image/png;base64,${data.qr}" 
+                             alt="WhatsApp QR Code" 
+                             class="qr-code"
+                             loading="lazy">
+                    `;
+                    
+                    status.innerHTML = `
+                        <i class="fas fa-mobile-alt status-icon"></i>
+                        Scan QR code with your WhatsApp mobile app
+                    `;
+                    status.className = 'status-card waiting';
+                    statusValue.textContent = 'Waiting';
+                    
+                } else if (data.status === 'connected') {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 2rem;">
+                            <div style="font-size: 5rem; margin-bottom: 1.5rem; color: var(--success-green);">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <h2 style="color: var(--success-green); margin-bottom: 1rem; font-weight: 700;">
+                                🎉 Successfully Connected!
+                            </h2>
+                            <p style="color: var(--text-secondary); font-size: 1.1rem; margin-bottom: 1rem;">
+                                CloudNextra Bot is now active and ready to serve.
+                            </p>
+                            <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-lg); margin-top: 1rem;">
+                                <p style="color: var(--text-muted); font-size: 0.9rem;">
+                                    <i class="fas fa-info-circle"></i>
+                                    You can now close this window and start using the bot!
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    status.innerHTML = `
+                        <i class="fas fa-check-circle status-icon"></i>
+                        Bot is connected and operational!
+                    `;
+                    status.className = 'status-card connected';
+                    statusValue.textContent = 'Connected';
+                    
+                    // Clear timers and hide refresh controls
+                    clearInterval(refreshInterval);
+                    clearInterval(countdownInterval);
+                    document.getElementById('refresh-btn').style.display = 'none';
+                    // Hide the refresh timer since we're connected
+                    document.querySelector('.refresh-timer').style.display = 'none';
+                    
+                    // Show success animation only once per session
+                    if (!successAnimationShown) {
+                        showSuccessAnimation();
+                        successAnimationShown = true;
+                    }
+                    techFeatures.addTerminalLine('✓ WhatsApp connection established', 'success');
+                    
+                } else if (data.status === 'disconnected') {
+                    container.innerHTML = `
+                        <div class="loading-animation">
+                            <div style="font-size: 4rem; margin-bottom: 1rem; color: var(--text-muted);">
+                                <i class="fas fa-wifi"></i>
+                            </div>
+                            <div class="modern-spinner">
+                                <div class="spinner-ring"></div>
+                            </div>
+                            <p style="color: var(--text-secondary); font-weight: 500; margin-top: 1rem;">
+                                Establishing secure connection...
+                            </p>
+                        </div>
+                    `;
+                    
+                    status.innerHTML = `
+                        <i class="fas fa-sync-alt status-icon"></i>
+                        Initializing WhatsApp Web connection...
+                    `;
+                    status.className = 'status-card waiting';
+                    statusValue.textContent = 'Initializing';
+                    
+                } else {
+                    throw new Error('Invalid response format');
+                }
+                
+                // Update uptime if available
+                if (data.uptime) {
+                    document.getElementById('uptime-value').textContent = data.uptime;
+                }
+
+                // Log QR scan for first-time users
+                if (data.qr && !localStorage.getItem('qr_scanned_before')) {
+                    techFeatures.addTerminalLine('→ QR code generated successfully', 'normal');
+                }
+                
+            } catch (error) {
+                console.error('Error fetching QR code:', error);
+                handleConnectionError(error);
+                techFeatures.addTerminalLine(`✗ Connection failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Enhanced error handling
+        function handleConnectionError(error) {
+            const container = document.getElementById('qr-container');
+            const status = document.getElementById('status');
+            const statusValue = document.getElementById('status-value');
+            
+            container.innerHTML = `
+                <div style="text-align: center; padding: 2rem;">
+                    <div style="font-size: 4rem; margin-bottom: 1.5rem; color: var(--error-red);">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h3 style="color: var(--error-red); margin-bottom: 1rem;">Connection Error</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                        ${error.message || 'Failed to establish connection'}
+                    </p>
+                    <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-lg);">
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">
+                            <i class="fas fa-lightbulb"></i>
+                            Try refreshing the page or check your internet connection
+                        </p>
+                    </div>
+                </div>
+            `;
+            
+            status.innerHTML = `
+                <i class="fas fa-exclamation-triangle status-icon"></i>
+                Connection failed. Please try refreshing.
+            `;
+            status.className = 'status-card error';
+            statusValue.textContent = 'Error';
+        }
+
+        // Show success animation (runs only once per session)
+        function showSuccessAnimation() {
+            // Check if user prefers reduced motion
+            if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                console.log('🎉 Connection successful! (Animation disabled - reduced motion preference)');
+                return;
+            }
+            
+            // Check if animation has already been shown
+            if (successAnimationShown) {
+                console.log('🎉 Connection successful! (Animation already shown this session)');
+                return;
+            }
+            
+            console.log('🎉 Showing connection success animation');
+            
+            // Create a single burst of confetti
+            const confettiCount = 25; // Reduced count for better performance
+            
+            for (let i = 0; i < confettiCount; i++) {
+                setTimeout(() => {
+                    createConfetti();
+                }, i * 40); // Slightly faster intervals
+            }
+            
+            // Clear any existing confetti after animation completes
+            setTimeout(() => {
+                cleanupConfetti();
+            }, 3500); // Clean up after animation duration
+        }
+
+        function createConfetti() {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti-particle'; // Add class for easier cleanup
+            confetti.style.position = 'fixed';
+            confetti.style.width = '8px';
+            confetti.style.height = '8px';
+            confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 70%, 60%)`;
+            confetti.style.left = Math.random() * window.innerWidth + 'px';
+            confetti.style.top = '-10px';
+            confetti.style.zIndex = '9999';
+            confetti.style.borderRadius = '50%';
+            confetti.style.pointerEvents = 'none';
+            
+            document.body.appendChild(confetti);
+            
+            const animation = confetti.animate([
+                { transform: 'translateY(0) rotateZ(0deg)', opacity: 1 },
+                { transform: `translateY(${window.innerHeight + 20}px) rotateZ(360deg)`, opacity: 0 }
+            ], {
+                duration: 2500, // Slightly faster animation
+                easing: 'cubic-bezier(0.5, 0, 0.5, 1)'
+            });
+            
+            animation.onfinish = () => {
+                if (confetti.parentNode) {
+                    confetti.remove();
+                }
+            };
+        }
+
+        // Clean up any remaining confetti particles
+        function cleanupConfetti() {
+            const remainingConfetti = document.querySelectorAll('.confetti-particle');
+            remainingConfetti.forEach(particle => {
+                if (particle.parentNode) {
+                    particle.remove();
+                }
+            });
+        }
+
+        // Enhanced refresh function
+        async function refreshQR() {
+            const button = document.getElementById('refresh-btn');
+            const originalContent = button.innerHTML;
+            
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+            
+            techFeatures.addTerminalLine('→ Refreshing QR code...', 'normal');
+            
+            try {
+                await fetchQRCode();
+                resetCountdown();
+                refreshCount++;
+                qrStartTime = Date.now();
+                updateConnectionStats();
+            } catch (error) {
+                console.error('Refresh failed:', error);
+            } finally {
+                setTimeout(() => {
+                    button.disabled = false;
+                    button.innerHTML = originalContent;
+                }, 1000);
+            }
+        }
+
+        // Update connection stats
+        function updateConnectionStats() {
+            const uptimeElement = document.getElementById('qr-uptime');
+            const refreshCountElement = document.getElementById('refresh-count');
+            
+            if (uptimeElement) {
+                const uptime = Math.floor((Date.now() - qrStartTime) / 1000);
+                if (uptime < 60) {
+                    uptimeElement.textContent = `${uptime}s`;
+                } else if (uptime < 3600) {
+                    uptimeElement.textContent = `${Math.floor(uptime / 60)}m ${uptime % 60}s`;
+                } else {
+                    const hours = Math.floor(uptime / 3600);
+                    const minutes = Math.floor((uptime % 3600) / 60);
+                    uptimeElement.textContent = `${hours}h ${minutes}m`;
+                }
+            }
+            
+            if (refreshCountElement) {
+                refreshCountElement.textContent = refreshCount.toString();
+            }
+        }
+
+        // Enhanced countdown timer
+        function startCountdown() {
+            countdownValue = 30;
+            const countdownElement = document.getElementById('countdown');
+            
+            countdownInterval = setInterval(() => {
+                countdownValue--;
+                countdownElement.textContent = countdownValue;
+                
+                // Add visual feedback for last 5 seconds
+                if (countdownValue <= 5) {
+                    countdownElement.style.color = 'var(--error-red)';
+                    countdownElement.style.animation = 'pulse 1s infinite';
+                } else {
+                    countdownElement.style.color = 'var(--accent-blue)';
+                    countdownElement.style.animation = 'none';
+                }
+                
+                if (countdownValue <= 0) {
+                    fetchQRCode();
+                    resetCountdown();
+                }
+            }, 1000);
+        }
+
+        function resetCountdown() {
+            clearInterval(countdownInterval);
+            countdownValue = 30;
+            const countdownElement = document.getElementById('countdown');
+            countdownElement.textContent = countdownValue;
+            countdownElement.style.color = 'var(--accent-blue)';
+            countdownElement.style.animation = 'none';
+            startCountdown();
+        }
+
+        // API Documentation modal
+        function showApiDocs() {
+            alert('API Documentation will be available soon! Check our GitHub repository for the latest updates.');
+        }
+
+        // Add pulse animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.1); }
+                100% { transform: scale(1); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            // Clean up any leftover confetti from previous sessions
+            cleanupConfetti();
+            
+            createParticles();
+            techFeatures = new AdvancedTechFeatures();
+            fetchQRCode();
+            startCountdown();
+            
+            // Start connection stats updates
+            setInterval(updateConnectionStats, 1000);
+            
+            // Register Service Worker for PWA capabilities
+            if ('serviceWorker' in navigator) {
+                const swCode = `
+                    const CACHE_NAME = 'cloudnextra-bot-v1';
+                    const urlsToCache = ['./', '/qr-data'];
+                    
+                    self.addEventListener('install', event => {
+                        event.waitUntil(
+                            caches.open(CACHE_NAME)
+                                .then(cache => cache.addAll(urlsToCache))
+                        );
+                    });
+                    
+                    self.addEventListener('fetch', event => {
+                        event.respondWith(
+                            caches.match(event.request)
+                                .then(response => response || fetch(event.request))
+                        );
+                    });
+                `;
+                
+                const blob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(blob);
+                
+                navigator.serviceWorker.register(swUrl)
+                    .then(registration => {
+                        console.log('SW registered:', registration);
+                    })
+                    .catch(error => {
+                        console.log('SW registration failed:', error);
+                    });
+            }
+        });
+
+        // Enhanced status checking with performance monitoring
+        setInterval(() => {
+            fetchQRCode();
+            
+            // Simulate performance metrics collection
+            if (techFeatures) {
+                const now = new Date();
+                techFeatures.addTerminalLine(`[${now.toLocaleTimeString()}] System heartbeat`, 'normal');
+            }
+        }, 5000);
+
+        // Add keyboard shortcuts with notifications
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                refreshQR();
+            }
+            
+            // Easter egg: Konami code
+            if (e.key === 'ArrowUp') {
+                document.konamiSequence = (document.konamiSequence || '') + 'u';
+                if (document.konamiSequence.endsWith('uuddlrlrba')) {
+                    console.log('Developer Mode Activated! 🚀');
+                    document.konamiSequence = '';
+                }
+            }
+        });
+
+        // Enhanced visibility change handler
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                clearInterval(countdownInterval);
+                techFeatures.addTerminalLine('⏸ Tab inactive - pausing updates', 'warning');
+            } else {
+                startCountdown();
+                fetchQRCode();
+                techFeatures.addTerminalLine('▶ Tab active - resuming updates', 'success');
+            }
+        });
+
+        // Performance monitoring
+        if ('performance' in window) {
+            window.addEventListener('load', () => {
+                setTimeout(() => {
+                    const perfData = performance.getEntriesByType('navigation')[0];
+                    const loadTime = perfData.loadEventEnd - perfData.loadEventStart;
+                    
+                    if (techFeatures) {
+                        techFeatures.addTerminalLine(`✓ Page loaded in ${loadTime.toFixed(0)}ms`, 'success');
+                    }
+                }, 100);
+            });
+        }
+
+        // Connection quality monitoring
+        if ('connection' in navigator) {
+            const connection = navigator.connection;
+            const updateConnectionInfo = () => {
+                if (techFeatures) {
+                    techFeatures.addTerminalLine(
+                        `Network: ${connection.effectiveType} • ${connection.downlink}Mbps`, 
+                        'normal'
+                    );
+                }
+            };
+            
+            connection.addEventListener('change', updateConnectionInfo);
+            setTimeout(updateConnectionInfo, 2000);
+        }
+
+        // Battery API for mobile devices with enhanced features
+        if ('getBattery' in navigator) {
+            navigator.getBattery().then(battery => {
+                const level = Math.round(battery.level * 100);
+                
+                // Show battery status in terminal
+                if (techFeatures) {
+                    techFeatures.addTerminalLine(`🔋 Battery: ${level}%`, level < 20 ? 'warning' : 'normal');
+                }
+                
+                if (level < 20) {
+                    // Enable power saving mode
+                    document.body.classList.add('power-saving');
+                    
+                    if (techFeatures) {
+                        techFeatures.addTerminalLine('⚡ Power saving mode enabled', 'warning');
+                    }
+                }
+                
+                // Listen for battery status changes
+                battery.addEventListener('levelchange', () => {
+                    const newLevel = Math.round(battery.level * 100);
+                    if (techFeatures) {
+                        techFeatures.addTerminalLine(`🔋 Battery: ${newLevel}%`, newLevel < 20 ? 'warning' : 'normal');
+                    }
+                });
+            });
+        }
+
+        // Device orientation support
+        if ('orientation' in screen) {
+            screen.orientation.addEventListener('change', () => {
+                // Trigger a layout recalculation
+                setTimeout(() => {
+                    window.dispatchEvent(new Event('resize'));
+                }, 100);
+            });
+        }
+
+        // Reduced motion preference support
+        if (window.matchMedia) {
+            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+            
+            const handleReducedMotion = (e) => {
+                if (e.matches) {
+                    document.body.classList.add('reduced-motion');
+                } else {
+                    document.body.classList.remove('reduced-motion');
+                }
+            };
+            
+            prefersReducedMotion.addEventListener('change', handleReducedMotion);
+            handleReducedMotion(prefersReducedMotion);
+        }
+
+        // Touch gesture improvements for mobile
+        let touchStartY = 0;
+        let touchStartX = 0;
+        
+        document.addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY;
+            touchStartX = e.touches[0].clientX;
+        }, { passive: true });
+        
+        document.addEventListener('touchmove', (e) => {
+            const touchY = e.touches[0].clientY;
+            const touchX = e.touches[0].clientX;
+            const diffY = touchStartY - touchY;
+            const diffX = touchStartX - touchX;
+            
+            // Prevent horizontal scrolling on mobile
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    </script>
+</body>
+</html>

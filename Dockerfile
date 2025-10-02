@@ -1,22 +1,4 @@
-FROM node:18-slim
-
-# Set Node.js environment variables for better compatibility
-ENV NODE_ENV=production
-ENV NODE_OPTIONS="--max-old-space-size=1024"
-
-# Install system dependencies including git
-RUN apt-get update && \
-    apt-get install -y \
-    git \
-    ffmpeg \
-    imagemagick \
-    webp \
-    curl \
-    python3 \
-    make \
-    g++ \
-    && apt-get upgrade -y \
-    && rm -rf /var/lib/apt/lists/*
+FROM node:20-alpine
 
 # Set working directory
 WORKDIR /app
@@ -25,20 +7,25 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install --omit=dev
+RUN npm ci --only=production
 
-# Copy application code
+# Copy application files
 COPY . .
 
-# Create directories for auth data and downloads
-RUN mkdir -p auth_info downloads/youtube
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S botuser -u 1001
+
+# Change ownership
+RUN chown -R botuser:nodejs /app
+USER botuser
 
 # Expose port
-EXPOSE $PORT
+EXPOSE 10000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:$PORT/health || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:10000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
 # Start the application
 CMD ["npm", "start"]
