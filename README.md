@@ -137,10 +137,7 @@
 ### 👑 **Owner Commands**
 
 - `.panel` — Interactive admin control panel
-- `.help` — Comprehensive command guide
 - `.status` — Bot status and system information
-- `.ping` — Response time test
-- `.about` — Technical information
 - `.backuptest` — Authentication backup verification
 
 ### 🔧 **Bot Settings** *(Owner Only)*
