@@ -496,13 +496,6 @@ async function sendErrorMessage(sock, senderJid, fromJid, errorType, commandName
     
     let errorMessage = '';
     switch (errorType) {
-        case 'MEDIA_DOWNLOAD_FAILED':
-            if (isUserAdmin) {
-                errorMessage = `❌ *Media Download Failed*\n\n🔧 *Admin Debug Info:*\n• Baileys API: Download stream error\n• Network: Connection timeout\n• File: Corrupted or unavailable\n• Server: WhatsApp media server issue\n\n💡 *Admin Actions:* Check network logs, verify Baileys version`;
-            } else {
-                errorMessage = `❌ *Media Download Failed*\n\n� *What to try:*\n• Send the media file again\n• Check your internet connection\n• Try a different file\n\n💡 *Tip:* Sometimes media files expire, try sending fresh ones!`;
-            }
-            break;
         case 'BOT_ADMIN_REQUIRED':
             if (isUserAdmin) {
                 errorMessage = `⚠️ *Verification Error*\n\n🤖 *Bot Admin Notice:*\nYou should have access to this command. This might be a bug.\n\n� *Debug Info:*\n• Your JID: ${senderJid}\n• Admin List: ${config.adminJids.join(', ')}\n• Command: ${commandName}\n\n💡 *Contact:* Developer for investigation`;

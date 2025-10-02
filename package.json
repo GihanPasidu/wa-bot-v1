@@ -1,7 +1,7 @@
 {
   "name": "cloudnextra-bot",
   "version": "2.0.0",
-  "description": "CloudNextra Bot - Advanced WhatsApp Bot with comprehensive features",
+  "description": "CloudNextra Bot - Streamlined WhatsApp Bot with core functionality and owner-only access",
   "main": "bot.js",
   "engines": {
     "node": ">=20.0.0",
