@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: whatsapp-bot-v2
+    name: whatsapp-bot-v1
     env: node
     plan: free
     runtime: node
@@ -12,7 +12,7 @@ services:
       - key: PORT
         value: 10000
       - key: RENDER_EXTERNAL_URL
-        value: https://wa-bot-v2-5f7s.onrender.com
+        value: https://wa-bot-v1-5f7s.onrender.com
       # Auth backup environment variables (managed by bot)
       - key: BAILEYS_CREDS_BACKUP
         sync: false

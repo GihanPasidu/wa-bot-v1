@@ -717,7 +717,7 @@ async function startBot() {
                 // Only allow commands from the bot owner (QR scanner)
                 if (!isBotAdmin) {
                     await sock.sendMessage(from, { 
-                        text: '🔒 *Access Restricted*\n\n❌ This bot only responds to the account that scanned the QR code.\n\n🤖 *CloudNextra Bot V2.0* - Owner Only Mode' 
+                        text: '🔒 *Access Restricted*\n\n❌ This bot only responds to the account that scanned the QR code.\n\n🤖 *CloudNextra Bot V1.0* - Owner Only Mode' 
                     }, { quoted: msg });
                     continue;
                 }
@@ -1273,7 +1273,7 @@ Here's everything you can do with this bot:
     });
 }
 
-console.log('🤖 Initializing CloudNextra Bot V2.0...');
+console.log('🤖 Initializing CloudNextra Bot V1.0...');
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 console.log('🔧 Built with Baileys Library');
 console.log('🔒 Owner-Only Mode: Bot restricted to QR scanner account');
