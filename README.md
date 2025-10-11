@@ -221,13 +221,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Issues**: [GitHub Issues](https://github.com/GihanPasidu/wa-bot-v1/issues)
 - **Documentation**: This README
-- **Contact**: [Your Contact Information]
+- **Contact**: contact@cloudnextra.dev
 
 ---
 
 <div align="center">
 
-**Made with ❤️ by CloudNextra Solutions**
+**Made by CloudNextra Solutions**
 
 *Powering modern WhatsApp automation*
 
